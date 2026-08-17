@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin="anonymous">
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,300;0,400;0,500;0,600;1,400&amp;family=Barlow+Condensed:ital,wght@0,300;0,400;0,500;0,600;0,700;0,900;1,600&amp;display=swap" rel="stylesheet">
+  <script src="image-slot.js"></script>
+  <script src="video-slot.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.min.js"></script>
+  <script src="assets/earth_studio_kf.js"></script>
+  <script src="assets/esri_tile_preload.js"></script>
+  <meta name="ext-resource-dependency" content="assets/Straits_Energy_Holdings.png" data-resource-id="res_Straits_Energy_Holdings_png">
+  <meta name="ext-resource-dependency" content="assets/EnergiDrop_Logo_Transparent.png" data-resource-id="res_EnergiDrop_Logo_Transparent_png">
+  <meta name="ext-resource-dependency" content="assets/3d_01_3d.png" data-resource-id="res_3d_01_3d_png">
+  <meta name="ext-resource-dependency" content="assets/3d_02_3d.png" data-resource-id="res_3d_02_3d_png">
+  <meta name="ext-resource-dependency" content="assets/3d_04_3d.png" data-resource-id="res_3d_04_3d_png">
+  <meta name="ext-resource-dependency" content="assets/3d_05_3d.png" data-resource-id="res_3d_05_3d_png">
+  <meta name="ext-resource-dependency" content="assets/3d_06_3d.png" data-resource-id="res_3d_06_3d_png">
+  <meta name="ext-resource-dependency" content="assets/3d_07_3d.png" data-resource-id="res_3d_07_3d_png">
+  <meta name="ext-resource-dependency" content="assets/3d_09_3d.png" data-resource-id="res_3d_09_3d_png">
+  <meta name="ext-resource-dependency" content="assets/piping_routing_reference.jpg" data-resource-id="res_piping_routing_reference_jpg">
+  <meta name="ext-resource-dependency" content="assets/maps_gmaps_eastern_cape_regional.png" data-resource-id="res_maps_gmaps_eastern_cape_regional_png">
+  <meta name="ext-resource-dependency" content="assets/maps_gmaps_metro_wide.png" data-resource-id="res_maps_gmaps_metro_wide_png">
+  <meta name="ext-resource-dependency" content="assets/maps_gmaps_site_overview.png" data-resource-id="res_maps_gmaps_site_overview_png">
+  <meta name="ext-resource-dependency" content="assets/maps_gmaps_flythrough_base.png" data-resource-id="res_maps_gmaps_flythrough_base_png">
+  <meta name="ext-resource-dependency" content="assets/maps_gmaps_pipeline_corridor_coast.png" data-resource-id="res_maps_gmaps_pipeline_corridor_coast_png">
+  <meta name="ext-resource-dependency" content="assets/maps_gmaps_site_close_orbital.png" data-resource-id="res_maps_gmaps_site_close_orbital_png">
+  <meta name="ext-resource-dependency" content="assets/cad_full_sheet_reference.png" data-resource-id="res_cad_full_sheet_reference_png">
+  <meta name="ext-resource-dependency" content="assets/stock_outfall.jpg" data-resource-id="res_stock_outfall">
+  <meta name="ext-resource-dependency" content="assets/stock_chp.jpg" data-resource-id="res_stock_chp">
+  <meta name="ext-resource-dependency" content="assets/stock_cng.jpg" data-resource-id="res_stock_cng">
+  <meta name="ext-resource-dependency" content="assets/stock_co2.jpg" data-resource-id="res_stock_co2">
+  <meta name="ext-resource-dependency" content="image-slot.js">
+  <meta name="ext-resource-dependency" content="video-slot.js">
+  <meta name="ext-resource-dependency" content="fwf-scene.merged.jsx">
+  <meta name="ext-resource-dependency" content="assets/earth_studio_kf.js">
+  <meta name="ext-resource-dependency" content="assets/esri_tile_preload.js">
+  <meta name="ext-resource-dependency" content="assets/fwf_render_front.png">
+  <meta name="ext-resource-dependency" content="assets/fwf_render_top.png">
+  <meta name="ext-resource-dependency" content="assets/fwf_render_side.png">
+  <template id="__bundler_thumbnail" data-bg-color="#050a0f">
+    <svg viewBox="0 0 1200 800" xmlns="http://www.w3.org/2000/svg">
+      <rect width="1200" height="800" fill="#050a0f"></rect>
+      <circle cx="600" cy="360" r="170" fill="none" stroke="#0090E0" stroke-width="10"></circle>
+      <path d="M600 250 C 540 340, 540 420, 600 470 C 660 420, 660 340, 600 250 Z" fill="#FBB708"></path>
+      <text x="600" y="620" font-family="Arial, sans-serif" font-size="64" font-weight="900" fill="#ffffff" text-anchor="middle" letter-spacing="2">FISHWATER FLATS</text>
+      <text x="600" y="680" font-family="Arial, sans-serif" font-size="30" fill="#8FE0FF" text-anchor="middle" letter-spacing="4">BIOGAS FACILITY</text>
+    </svg>
+  </template>
+  <style>
+    html, body { margin: 0; padding: 0; background: #05090d; }
+    a { color: #8FE0FF; } a:hover { color: #FBB708; }
+    #__om_root { width: 100%; height: 100vh; }
+  </style>
+</helmet>
+<div id="__om_root" data-screen-label="FWF Promo Video">
+  <x-import component-from-global-scope="FWFVideo" from="./fwf-scene.merged.jsx" hint-size="100%,100%"></x-import>
+</div>
+</x-dc>
+</body>
+</html>
