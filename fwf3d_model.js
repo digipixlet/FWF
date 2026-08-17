@@ -1,0 +1,306 @@
+const stage = document.querySelector('three-d-stage');
+  const ready = await stage.ready;
+  const THREE = ready.THREE;
+  const camera = ready.camera || stage._camera;
+  const controls = ready.controls || stage._controls;
+
+  // ── Materials ─────────────────────────────────────────────────────────────
+  const std = (name, color, rough, metal, extra) => new THREE.MeshStandardMaterial(Object.assign({ name, color, roughness: rough, metalness: metal }, extra || {}));
+  const M = {
+    // Colours matched to 24-0503 B01 001 (3).pdf BIM renders
+    pad:      std('concrete_pad',    '#c2b88a', 0.95, 0.0),  // beige site pad
+    road:     std('access_road',     '#6a6254', 0.95, 0.0),
+    grass:    std('landscape',       '#5a7a4a', 1.0,  0.0),
+    shell:    std('digester_shell',  '#3d8a44', 0.72, 0.08), // green Triton digesters
+    band:     std('shell_band',      '#2d6835', 0.6,  0.12), // darker green band
+    membrane: std('gas_membrane',    '#dedad0', 0.38, 0.04), // cream dome tops
+    roof:     std('tank_roof',       '#ccc6b0', 0.6,  0.08), // cream/tan roof
+    steel:    std('steel',           '#8a9aaa', 0.45, 0.35),
+    dome:     std('gas_holder',      '#b8c8d8', 0.28, 0.32), // grey-blue gas holder
+    dark:     std('dark_steel',      '#2b323a', 0.6,  0.35),
+    grate:    std('walkway_grate',   '#5a6470', 0.7,  0.4),
+    accent:   std('accent_blue',     '#2b60b0', 0.5,  0.2),  // blue CHP/process units
+    accentDk: std('accent_blue_dk',  '#1a3d72', 0.5,  0.25),
+    gold:     std('flame_gold',      '#FBB708', 0.4,  0.1, { emissive: '#FBB708', emissiveIntensity: 0.4 }),
+    glass:    std('control_glass',   '#7fb8e0', 0.15, 0.1, { transparent: true, opacity: 0.55 }),
+    cryo:     std('cryo_insul',      '#e0ddd0', 0.35, 0.15), // cream cryo vessel
+    water:    std('effluent',        '#4a8a60', 0.2,  0.1, { transparent: true, opacity: 0.85 }),
+  };
+  M.pgas     = std('pipe_biogas',     '#E0A21A', 0.45, 0.3);
+  M.pmethane = std('pipe_biomethane', '#8Fb84f', 0.45, 0.3);
+  M.pfeed    = std('pipe_feed',       '#0090E0', 0.5,  0.25);
+  M.pco2     = std('pipe_co2',        '#c94f3d', 0.5,  0.3);
+
+  const plant = new THREE.Group(); plant.name = 'FishwaterFlats_BiogasPlant';
+  const labelGroup = new THREE.Group(); labelGroup.name = 'reference_labels';
+  const add = (geo, mat, name, x, y, z, rot, parent) => {
+    const m = new THREE.Mesh(geo, mat); m.name = name;
+    m.position.set(x, y, z); if (rot) m.rotation.set(rot[0]||0, rot[1]||0, rot[2]||0);
+    (parent || plant).add(m); return m;
+  };
+
+  // ── Ground: pad + landscape apron + access roads ──────────────────────────
+  add(new THREE.BoxGeometry(300, 0.6, 200), M.grass, 'landscape_apron', 0, -0.9, 0);
+  add(new THREE.BoxGeometry(224, 1.2, 142), M.pad, 'site_pad', 0, -0.3, 0);
+  add(new THREE.BoxGeometry(224, 0.1, 14), M.road, 'road_spine', 0, 0.35, 60);
+  add(new THREE.BoxGeometry(14, 0.1, 142), M.road, 'road_cross', -70, 0.35, 0);
+
+  // perimeter fence posts
+  const fence = new THREE.Group(); fence.name = 'perimeter_fence';
+  const fx = 112, fz = 71;
+  for (let x = -fx; x <= fx; x += 16) { add(new THREE.BoxGeometry(0.5, 4, 0.5), M.dark, `fence_n_${x}`, x, 2, -fz, null, fence); add(new THREE.BoxGeometry(0.5, 4, 0.5), M.dark, `fence_s_${x}`, x, 2, fz, null, fence); }
+  for (let z = -fz; z <= fz; z += 16) { add(new THREE.BoxGeometry(0.5, 4, 0.5), M.dark, `fence_w_${z}`, -fx, 2, z, null, fence); add(new THREE.BoxGeometry(0.5, 4, 0.5), M.dark, `fence_e_${z}`, fx, 2, z, null, fence); }
+  plant.add(fence);
+
+  // ── Helper: external spiral-ish stair tower + ring walkway ─────────────────
+  function stairTower(x, z, h, base) {
+    const g = new THREE.Group(); g.name = base;
+    add(new THREE.BoxGeometry(2.4, h, 2.4), M.grate, base + '_frame', x, h/2, z, null, g);
+    const steps = Math.floor(h / 1.6);
+    for (let i = 0; i < steps; i++) add(new THREE.BoxGeometry(3.2, 0.25, 1.3), M.grate, base + '_step' + i, x + 1.4, 1 + i*1.6, z, [0,(i%2?0.15:-0.15),0], g);
+    plant.add(g); return g;
+  }
+  function ringWalk(x, z, r, y, base) {
+    add(new THREE.TorusGeometry(r + 1.2, 0.4, 8, 48), M.grate, base + '_rail', x, y, z, [Math.PI/2,0,0]);
+    add(new THREE.TorusGeometry(r + 1.2, 0.15, 6, 48), M.grate, base + '_top', x, y + 1.1, z, [Math.PI/2,0,0]);
+  }
+
+  // ── 3× Triton CSTR digesters with double-membrane gas domes ────────────────
+  const dR = 21.6, dH = 22, dZ = -22, dX = [-52, 0, 52];
+  dX.forEach((x, i) => {
+    const tag = 'ABC'[i];
+    add(new THREE.CylinderGeometry(dR, dR, dH, 56), M.shell, `digester_${tag}_shell`, x, dH/2, dZ);
+    // horizontal stiffening bands
+    [0.32, 0.66].forEach((f, k) => add(new THREE.CylinderGeometry(dR + 0.25, dR + 0.25, 1.1, 56), M.band, `digester_${tag}_band${k+1}`, x, dH*f, dZ));
+    // double-membrane gas-storage dome (bulged)
+    add(new THREE.SphereGeometry(dR, 56, 28, 0, Math.PI*2, 0, Math.PI*0.42), M.membrane, `digester_${tag}_dome`, x, dH, dZ);
+    add(new THREE.TorusGeometry(dR, 0.6, 10, 56), M.roof, `digester_${tag}_rim`, x, dH + 0.2, dZ, [Math.PI/2,0,0]);
+    // central mixer motor housing on top
+    add(new THREE.CylinderGeometry(2, 2.4, 3.5, 20), M.dark, `digester_${tag}_mixer`, x, dH + dR*0.42 + 1, dZ);
+    add(new THREE.BoxGeometry(3.4, 1.6, 3.4), M.accent, `digester_${tag}_mixer_drive`, x, dH + dR*0.42 + 3, dZ);
+    stairTower(x + dR + 1.5, dZ, dH, `digester_${tag}_stair`);
+    ringWalk(x, dZ, dR, dH - 0.5, `digester_${tag}_walk`);
+  });
+
+  // ── Effluent / digestate storage tanks (open-top, liquid) ──────────────────
+  [[-30, 40], [-6, 40]].forEach((p, i) => {
+    add(new THREE.CylinderGeometry(9, 9, 8, 40), M.shell, `digestate_tank_${i+1}`, p[0], 4, p[1]);
+    add(new THREE.CylinderGeometry(8.6, 8.6, 0.4, 40), M.water, `digestate_tank_${i+1}_liquid`, p[0], 7.9, p[1]);
+    add(new THREE.TorusGeometry(9, 0.35, 8, 40), M.grate, `digestate_tank_${i+1}_rail`, p[0], 8.2, p[1], [Math.PI/2,0,0]);
+  });
+
+  // ── Gas holder (external double-membrane) ──────────────────────────────────
+  const gR = 20; // enlarged to match PDF renders — ~40 m diameter dome
+  add(new THREE.SphereGeometry(gR, 56, 30, 0, Math.PI*2, 0, Math.PI*0.5), M.dome, 'gas_holder_dome', -90, 1, 24);
+  add(new THREE.CylinderGeometry(gR + 0.4, gR + 0.4, 2, 56), M.roof, 'gas_holder_base', -90, 1, 24);
+  add(new THREE.TorusGeometry(gR, 0.5, 8, 56), M.band, 'gas_holder_equator', -90, 1, 24, [Math.PI/2,0,0]);
+
+  // ── CHP hall (6 gensets) — louvered building, radiators, stacks ────────────
+  add(new THREE.BoxGeometry(50, 12, 24), M.steel, 'chp_building', 62, 6, 18);
+  add(new THREE.BoxGeometry(50, 1.4, 24), M.accent, 'chp_roof_band', 62, 12.7, 18);
+  // louver strips on the long face
+  for (let i = 0; i < 6; i++) add(new THREE.BoxGeometry(6.6, 6, 0.4), M.dark, `chp_louver_${i+1}`, 42 + i*8, 6, 6.1);
+  // roof-mounted radiator fans
+  for (let i = 0; i < 4; i++) add(new THREE.CylinderGeometry(2.2, 2.2, 1.2, 20), M.dark, `chp_radiator_${i+1}`, 48 + i*9, 13.6, 18);
+  // exhaust stacks
+  for (let i = 0; i < 6; i++) { add(new THREE.CylinderGeometry(1.1, 1.25, 20, 20), M.dark, `chp_stack_${i+1}`, 45 + i*6.4, 23, 26); add(new THREE.TorusGeometry(1.25, 0.25, 6, 16), M.band, `chp_stack_${i+1}_cap`, 45 + i*6.4, 33, 26, [Math.PI/2,0,0]); }
+  // transformer / switchgear yard
+  add(new THREE.BoxGeometry(16, 7, 12), M.dark, 'transformer_yard', 62, 3.5, 38);
+  for (let i=0;i<3;i++) add(new THREE.CylinderGeometry(1.3,1.3,4,12), M.band, `transformer_bushing_${i+1}`, 57+i*5, 7.5, 38);
+
+  // ── Feedstock reception: tanker bay + live-bottom bins + blending tanks ─────
+  add(new THREE.BoxGeometry(26, 9, 14), M.steel, 'reception_building', 28, 4.5, 48);
+  add(new THREE.BoxGeometry(26, 0.8, 14), M.accentDk, 'reception_roof', 28, 9.2, 48);
+  add(new THREE.BoxGeometry(24, 7, 10), M.dark, 'live_bottom_bins', 4, 3.5, 50);
+  [-14, -6, 2].forEach((x, i) => { add(new THREE.CylinderGeometry(4, 4, 11, 32), M.shell, `blending_tank_${i+1}`, x, 5.5, 40); add(new THREE.SphereGeometry(4, 28, 14, 0, Math.PI*2, 0, Math.PI/2), M.roof, `blending_tank_${i+1}_cap`, x, 11, 40); });
+  // FOG receiving (fats/oils/greases) — small heated tank
+  add(new THREE.CylinderGeometry(3, 3, 8, 28), M.accent, 'fog_tank', 16, 4, 40);
+
+  // ── Gas treatment / BGU (upgrading train) — vessels on a platform ──────────
+  add(new THREE.BoxGeometry(30, 1, 16), M.grate, 'bgu_platform', 96, 12, -6);
+  [0, 7.5, 15, 22.5].forEach((dx, i) => { add(new THREE.CylinderGeometry(2.7, 2.7, 16, 30), M.steel, `bgu_vessel_${i+1}`, 84 + dx, 8.5, -6); add(new THREE.SphereGeometry(2.7, 26, 13, 0, Math.PI*2, 0, Math.PI/2), M.band, `bgu_vessel_${i+1}_cap`, 84 + dx, 16.5, -6); });
+  stairTower(84, 4, 12, 'bgu_stair');
+
+  // ── Cryogenic CO₂: cold box + insulated horizontal storage capsule ─────────
+  add(new THREE.BoxGeometry(9, 16, 9), M.cryo, 'co2_cold_box', 82, 8, 34);
+  add(new THREE.BoxGeometry(9.4, 1, 9.4), M.accent, 'co2_cold_box_cap', 82, 16, 34);
+  add(new THREE.CylinderGeometry(4, 4, 20, 36), M.cryo, 'co2_vessel_body', 100, 6, 34, [0,0,Math.PI/2]);
+  for (let i=0;i<5;i++) add(new THREE.TorusGeometry(4, 0.25, 8, 36), M.band, `co2_vessel_rib_${i+1}`, 92+i*4, 6, 34, [0,0,Math.PI/2]);
+  add(new THREE.SphereGeometry(4, 30, 16), M.cryo, 'co2_vessel_cap_a', 110, 6, 34);
+  add(new THREE.SphereGeometry(4, 30, 16), M.cryo, 'co2_vessel_cap_b', 90, 6, 34);
+  add(new THREE.BoxGeometry(22, 2, 10), M.dark, 'co2_vessel_saddle', 100, 1, 34);
+
+  // ── Emergency flare (elevated, with flame) ─────────────────────────────────
+  add(new THREE.CylinderGeometry(1.1, 1.6, 32, 20), M.dark, 'flare_stack', 104, 16, -36);
+  for (let i=0;i<3;i++) add(new THREE.TorusGeometry(1.35, 0.15, 6, 16), M.band, `flare_ring_${i+1}`, 104, 6+i*9, -36, [Math.PI/2,0,0]);
+  const flame = add(new THREE.ConeGeometry(2.3, 7, 20), M.gold, 'flare_flame', 104, 34, -36);
+
+  // ── Control / admin building (context, near entrance) ──────────────────────
+  add(new THREE.BoxGeometry(22, 8, 13), M.steel, 'control_building', -60, 4, 52);
+  add(new THREE.BoxGeometry(20, 4.5, 0.4), M.glass, 'control_glazing', -60, 4.5, 45.6);
+  add(new THREE.BoxGeometry(22, 0.7, 13), M.accent, 'control_roof', -60, 8.3, 52);
+
+  // ── Piping network ──────────────────────────────────────────────────────
+  const V = (x, y, z) => new THREE.Vector3(x, y, z);
+  const YUP = V(0, 1, 0);
+  let _pipeN = 0;
+  function pipe(a, b, r, mat, name) {
+    const dir = new THREE.Vector3().subVectors(b, a); const len = dir.length();
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(r, r, len, 14), mat);
+    mesh.name = name || ('pipe_' + (++_pipeN));
+    mesh.position.copy(a).add(b).multiplyScalar(0.5);
+    mesh.quaternion.setFromUnitVectors(YUP, dir.clone().normalize());
+    plant.add(mesh); return mesh;
+  }
+  function flange(p, r, mat, name) { add(new THREE.SphereGeometry(r, 14, 10), mat, name, p.x, p.y, p.z); }
+  function route(pts, r, mat, base) {
+    for (let i = 0; i < pts.length - 1; i++) pipe(pts[i], pts[i + 1], r, mat, base + '_seg' + (i + 1));
+    for (let i = 1; i < pts.length - 1; i++) flange(pts[i], r * 1.25, mat, base + '_elbow' + i);
+  }
+
+  const dTop = dH + 4;
+  dX.forEach((x, i) => { pipe(V(x, dTop, dZ), V(x, dTop + 5, dZ), 0.55, M.pgas, `gas_riser_${'ABC'[i]}`); flange(V(x, dTop + 5, dZ), 0.8, M.pgas, `gas_riser_${'ABC'[i]}_tee`); });
+  route([V(-52, dTop + 5, dZ), V(52, dTop + 5, dZ)], 0.7, M.pgas, 'gas_header');
+  route([V(-52, dTop + 5, dZ), V(-90, 20, dZ), V(-90, 17, 24)], 0.75, M.pgas, 'gas_to_holder');
+  route([V(-90, 15, 24), V(-90, 13, 8), V(84, 13, 8), V(84, 16, -6)], 0.75, M.pgas, 'holder_to_bgu');
+  route([V(84, 16.5, -6), V(106.5, 16.5, -6)], 0.55, M.pmethane, 'bgu_manifold');
+  route([V(88, 13, -6), V(88, 12, 18), V(74, 12, 18)], 0.55, M.pmethane, 'bgu_to_chp');
+  route([V(98, 13, -6), V(98, 10, 34), V(87, 10, 34)], 0.5, M.pco2, 'bgu_to_co2');
+  route([V(52, dTop + 5, dZ), V(104, 24, dZ), V(104, 22, -36)], 0.5, M.pco2, 'relief_to_flare');
+  route([V(-14, 11, 40), V(2, 11, 40)], 0.55, M.pfeed, 'feed_manifold');
+  route([V(-6, 11, 40), V(-6, 4, 20), V(-6, 4, dZ+8)], 0.7, M.pfeed, 'feed_main');
+  dX.forEach((x, i) => route([V(-6, 4, dZ+8), V(x, 4, dZ+8), V(x, 4, dZ+dR-2)], 0.5, M.pfeed, `feed_to_dig_${'ABC'[i]}`));
+  // digestate out of digesters → storage
+  route([V(-52, 3, dZ+dR), V(-52, 3, 40), V(-30, 3, 40)], 0.5, M.pfeed, 'digestate_out');
+
+  // pipe-rack posts under the long holder→BGU run
+  for (let x = -66; x <= 78; x += 22) add(new THREE.BoxGeometry(1.2, 13, 1.2), M.dark, `rack_post_${x}`, x, 6.5, 8);
+
+  // ── Floating reference labels (billboarded canvas sprites) ─────────────────
+  function makeLabel(text, x, y, z, accent) {
+    const pad = 24, fs = 44;
+    const cv = document.createElement('canvas'); const ctx = cv.getContext('2d');
+    ctx.font = `700 ${fs}px 'Barlow Condensed', sans-serif`;
+    const w = ctx.measureText(text).width;
+    cv.width = w + pad*2; cv.height = fs + pad*1.4;
+    ctx.font = `700 ${fs}px 'Barlow Condensed', sans-serif`;
+    ctx.fillStyle = 'rgba(7,16,26,0.86)';
+    const r = 14; const bw = cv.width, bh = cv.height;
+    ctx.beginPath(); ctx.moveTo(r,0); ctx.arcTo(bw,0,bw,bh,r); ctx.arcTo(bw,bh,0,bh,r); ctx.arcTo(0,bh,0,0,r); ctx.arcTo(0,0,bw,0,r); ctx.fill();
+    ctx.fillStyle = accent || '#0090E0'; ctx.fillRect(0, 0, 6, bh);
+    ctx.fillStyle = '#eaf1f7'; ctx.textBaseline = 'middle'; ctx.fillText(text, pad, bh/2 + 2);
+    const tex = new THREE.CanvasTexture(cv); tex.anisotropy = 4;
+    const spr = new THREE.Sprite(new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false }));
+    spr.name = 'label_' + text.replace(/[^a-z0-9]+/gi,'_');
+    spr.position.set(x, y, z); const s = 0.085; spr.scale.set(bw*s, bh*s, 1);
+    spr.renderOrder = 999; labelGroup.add(spr); return spr;
+  }
+  makeLabel('Digesters ×3', 0, dH + 18, dZ, '#0090E0');
+  makeLabel('Gas Holder', -90, 22, 24, '#E0A21A');
+  makeLabel('CHP Hall', 62, 20, 18, '#0090E0');
+  makeLabel('Gas Upgrading (BGU)', 96, 24, -6, '#8Fb84f');
+  makeLabel('Cryogenic CO₂', 100, 14, 34, '#c94f3d');
+  makeLabel('Feedstock Reception', 28, 15, 48, '#0090E0');
+  makeLabel('Flare', 104, 40, -36, '#FBB708');
+  makeLabel('Digestate Storage', -18, 13, 40, '#0090E0');
+  makeLabel('Control Building', -60, 13, 52, '#0090E0');
+  plant.add(labelGroup);
+
+  stage.setObject(plant);
+
+  // ── On-site reference HUD: fly-to systems + toggles ────────────────────────
+  const SYS = [
+    { key: 'digester',   nm: 'Digesters ×3',        c: '#0090E0', p: [0, dH, dZ],      d: 120, kick: 'Anaerobic Digestion', spec: 'Three high-solids CSTR digesters, mesophilic, ~21-day retention and a target availability above 95%. Together they produce raw biogas at roughly 2,400 Nm³/h — about 60% methane.' },
+    { key: 'gas_holder', nm: 'Gas Holder',          c: '#E0A21A', p: [-90, 10, 24],    d: 70,  kick: 'Biogas Storage', spec: 'External double-membrane holder that buffers raw biogas between production and upgrading, smoothing supply to the CHP and BGU trains.' },
+    { key: 'chp',        nm: 'CHP Hall',            c: '#0090E0', p: [62, 8, 18],      d: 90,  kick: 'Renewable Power', spec: 'Six combined-heat-and-power modules growing embedded generation from about 2 toward 5 MWe, exporting renewable electricity to the municipal grid.' },
+    { key: 'bgu',        nm: 'Gas Upgrading (BGU)', c: '#8Fb84f', p: [96, 10, -6],     d: 70,  kick: 'Biomethane Upgrading', spec: 'Scrubbing and upgrading vessels that clean raw biogas to pipeline-ready biomethane for the dedicated 7.7 km pipeline and virtual (tanker) routes.' },
+    { key: 'co2',        nm: 'Cryogenic CO₂',       c: '#c94f3d', p: [100, 6, 34],     d: 60,  kick: 'CO₂ Recovery', spec: 'Cold box and insulated storage capsule recovering about 30 tonnes/day of food & beverage-grade liquid CO₂ from the upgrading off-gas.' },
+    { key: 'reception',  nm: 'Feedstock Reception', c: '#0090E0', p: [22, 5, 46],      d: 80,  kick: 'Feedstock In', spec: 'Receives ~155 ML/day wastewater and ~74 t/day dry sludge, plus >200 t/day source-separated organics, fats, oils and greases — earning gate-fee revenue.' },
+    { key: 'flare',      nm: 'Flare',               c: '#FBB708', p: [104, 20, -36],   d: 70,  kick: 'Safety Relief', spec: 'Elevated emergency flare that safely combusts biogas during upset or maintenance conditions.' },
+    { key: 'digestate',  nm: 'Digestate Storage',   c: '#0090E0', p: [-18, 8, 40],     d: 70,  kick: 'Nutrients Out', spec: 'Stabilised, nutrient-rich digestate stored for beneficial reuse as fertiliser and soil conditioner.' },
+    { key: 'control',    nm: 'Control Building',    c: '#0090E0', p: [-60, 6, 52],     d: 70,  kick: 'Operations', spec: 'Administration and SCADA control centre overseeing the integrated facility.' },
+    { key: null,         nm: 'Whole site',          c: '#8aa0b4', p: [0, 8, 0],        d: 260 },
+  ];
+  const list = document.getElementById('hudList');
+  let flyRAF = null;
+  function flyTo(target, dist) {
+    if (flyRAF) cancelAnimationFrame(flyRAF);
+    controls.autoRotate = false; document.getElementById('togSpin').classList.remove('on');
+    const tgt = new THREE.Vector3(target[0], target[1], target[2]);
+    const startT = controls.target.clone(), startC = camera.position.clone();
+    const endC = new THREE.Vector3(tgt.x + dist*0.62, tgt.y + dist*0.5, tgt.z + dist*0.62);
+    const t0 = performance.now(), dur = 900;
+    (function step(now) {
+      let k = Math.min(1, (now - t0)/dur); k = k<0.5 ? 4*k*k*k : 1-Math.pow(-2*k+2,3)/2;
+      controls.target.lerpVectors(startT, tgt, k);
+      camera.position.lerpVectors(startC, endC, k);
+      controls.update();
+      if (k < 1) flyRAF = requestAnimationFrame(step);
+    })(t0);
+  }
+  SYS.forEach(s => {
+    const b = document.createElement('button'); b.className = 'row';
+    b.innerHTML = `<span class="sw" style="background:${s.c}"></span><span class="nm">${s.nm}</span><span class="cnt">›</span>`;
+    b.onclick = () => { flyTo(s.p, s.d); showInfo(s); }; list.appendChild(b);
+  });
+  document.getElementById('togLabels').onclick = (e) => { labelGroup.visible = !labelGroup.visible; e.target.classList.toggle('on', labelGroup.visible); };
+  document.getElementById('togSpin').onclick = (e) => { controls.autoRotate = !controls.autoRotate; e.target.classList.toggle('on', controls.autoRotate); };
+
+  // ── Interactive selection: click a structure → fly, highlight, show specs ──
+  const infoEl = document.getElementById('info');
+  const sysByKey = k => SYS.find(s => s.key === k);
+  function matchSys(name) {
+    if (!name) return null;
+    if (/^digester/.test(name)) return sysByKey('digester');
+    if (/^gas_holder/.test(name)) return sysByKey('gas_holder');
+    if (/^chp|^transformer/.test(name)) return sysByKey('chp');
+    if (/^bgu/.test(name)) return sysByKey('bgu');
+    if (/^co2/.test(name)) return sysByKey('co2');
+    if (/^reception|^blending|^live_bottom|^fog/.test(name)) return sysByKey('reception');
+    if (/^flare/.test(name)) return sysByKey('flare');
+    if (/^digestate/.test(name)) return sysByKey('digestate');
+    if (/^control/.test(name)) return sysByKey('control');
+    return null;
+  }
+  function showInfo(s) {
+    if (!s || !s.spec) { infoEl.style.display = 'none'; return; }
+    infoEl.style.borderLeftColor = s.c;
+    document.getElementById('infoKick').textContent = s.kick;
+    document.getElementById('infoKick').style.color = s.c;
+    document.getElementById('infoTitle').textContent = s.nm;
+    document.getElementById('infoBody').textContent = s.spec;
+    infoEl.style.display = 'block';
+  }
+  document.getElementById('infoClose').onclick = () => { infoEl.style.display = 'none'; clearHi(); };
+
+  // highlight via emissive boost on the selected system's meshes
+  let hi = [];
+  function clearHi() { hi.forEach(m => { if (m.material.emissive) { m.material.emissive.setHex(m.userData._eHex); m.material.emissiveIntensity = m.userData._eInt; } }); hi = []; }
+  function highlight(sys) {
+    clearHi(); if (!sys || !sys.key) return;
+    plant.traverse(o => {
+      if (o.isMesh && o.material.emissive && matchSys(o.name) === sys) {
+        o.material = o.material.clone();
+        o.userData._eHex = o.material.emissive.getHex();
+        o.userData._eInt = o.material.emissiveIntensity;
+        o.material.emissive.setHex(0x0090E0); o.material.emissiveIntensity = 0.3; hi.push(o);
+      }
+    });
+  }
+
+  const ray = new THREE.Raycaster(); const ndc = new THREE.Vector2();
+  const canvas = stage.renderer ? stage.renderer.domElement : stage.shadowRoot.querySelector('canvas');
+  function pick(ev) {
+    const r = canvas.getBoundingClientRect();
+    ndc.x = ((ev.clientX - r.left) / r.width) * 2 - 1;
+    ndc.y = -((ev.clientY - r.top) / r.height) * 2 + 1;
+    ray.setFromCamera(ndc, camera);
+    const hits = ray.intersectObjects(plant.children, true);
+    for (const h of hits) { const s = matchSys(h.object.name); if (s) return s; }
+    return null;
+  }
+  canvas.addEventListener('click', ev => { const s = pick(ev); if (s) { flyTo(s.p, s.d); highlight(s); showInfo(s); } });
+  canvas.addEventListener('pointermove', ev => { canvas.style.cursor = pick(ev) ? 'pointer' : 'grab'; });
+
+  // gentle flame flicker
+  (function flicker(){ flame.material.emissiveIntensity = 0.35 + Math.sin(performance.now()*0.006)*0.12; flame.scale.y = 1 + Math.sin(performance.now()*0.008)*0.06; requestAnimationFrame(flicker); })();
