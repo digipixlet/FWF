@@ -1,894 +1,3 @@
-// @ds-adherence-ignore -- omelette starter scaffold (raw elements/hex/px by design)
-// Copied omelette starter. Re-running copy_starter_component with this kind overwrites this file with the latest version (page content is unaffected).
-
-/* BEGIN USAGE */
-// animations.jsx — timeline engine. Exports (on window): Stage, Sprite,
-//   TextSprite, ImageSprite, RectSprite, VideoSprite, PlaybackBar,
-//   useTime, useTimeline, useSprite, Easing, interpolate, animate, clamp.
-//
-//   <Stage width={1280} height={720} duration={10} background="#f6f4ef">
-//     <Sprite start={0} end={3}>
-//       <TextSprite text="Hello" x={100} y={300} size={72} color="#111" />
-//     </Sprite>
-//     <Sprite start={2} end={8}>
-//       <ImageSprite src="hero.png" x={200} y={120} width={640} height={360} kenBurns />
-//     </Sprite>
-//   </Stage>
-//
-// Stage({width,height,duration,background,fps,loop,autoplay}) — auto-scales to
-//   viewport; scrubber + play/pause + ←/→ seek + space + 0-reset; persists
-//   playhead. The canvas is an <svg><foreignObject>, export-ready: Share →
-//   Export → Video (or the PlaybackBar's download button) renders it to .mp4.
-//   Stage OWNS the exportable-video contract (the
-//   data-om-exportable-video-with-duration-secs attribute + seek listener +
-//   font inlining) — NEVER put that attribute on any other element; a second
-//   nested "exportable root" makes export and the host timeline bind to the
-//   wrong element and silently breaks playback control.
-//   Screenshot tools DOM-rerender (not pixel-capture) and unwrap this wrapper
-//   so captures should work — but if one comes back black, that's a capture
-//   artifact, not a render bug; trust the live preview.
-// Sprite({start,end,keepMounted}) — mounts children only while playhead is in
-//   [start,end]. Children read {localTime, progress, duration} via useSprite().
-// useTime() → seconds; useTimeline() → {time,duration,playing,setTime,setPlaying}.
-// TextSprite({text,x,y,size,color,font,weight,align,entryDur,exitDur}) — fades/scales in+out.
-// ImageSprite({src,x,y,width,height,fit,radius,kenBurns,placeholder}) — same, with optional ken-burns.
-// RectSprite({x,y,width,height,color,radius}) — solid box with entry/exit.
-// VideoSprite({src,start,end,speed,style}) — looped <video> clip synced to the
-//   timeline; its audio is mixed into the exported video.
-// Easing.{linear,easeIn/Out/InOut Quad/Cubic/Quart/Quint/Expo/Back, …}
-// interpolate([t0,t1,…],[v0,v1,…],ease?) → (t)=>v  — piecewise tween.
-// animate({from,to,start,end,ease}) → (t)=>v  — single tween.
-//
-// Build scenes by composing Sprites inside Stage. Absolutely-position elements.
-//
-// In a .dc.html project, put your scene in a sibling my-scene.jsx (reading
-// {Stage, Sprite, useTime, Easing, …} from window is safe) and mount BOTH:
-//   <x-import component-from-global-scope="MyScene"
-//             from="./animations.jsx ./my-scene.jsx"></x-import>
-// The two files in from= load in order, so my-scene.jsx can use the globals
-// animations.jsx set.
-/* END USAGE */
-// ─────────────────────────────────────────────────────────────────────────────
-
-// ── Easing functions (hand-rolled, Popmotion-style) ─────────────────────────
-// All easings take t ∈ [0,1] and return eased t ∈ [0,1] (may overshoot for back/elastic).
-const Easing = {
-  linear: (t) => t,
-
-  // Quad
-  easeInQuad:    (t) => t * t,
-  easeOutQuad:   (t) => t * (2 - t),
-  easeInOutQuad: (t) => (t < 0.5 ? 2 * t * t : -1 + (4 - 2 * t) * t),
-
-  // Cubic
-  easeInCubic:    (t) => t * t * t,
-  easeOutCubic:   (t) => (--t) * t * t + 1,
-  easeInOutCubic: (t) => (t < 0.5 ? 4 * t * t * t : (t - 1) * (2 * t - 2) * (2 * t - 2) + 1),
-
-  // Quart
-  easeInQuart:    (t) => t * t * t * t,
-  easeOutQuart:   (t) => 1 - (--t) * t * t * t,
-  easeInOutQuart: (t) => (t < 0.5 ? 8 * t * t * t * t : 1 - 8 * (--t) * t * t * t),
-
-  // Expo
-  easeInExpo:  (t) => (t === 0 ? 0 : Math.pow(2, 10 * (t - 1))),
-  easeOutExpo: (t) => (t === 1 ? 1 : 1 - Math.pow(2, -10 * t)),
-  easeInOutExpo: (t) => {
-    if (t === 0) return 0;
-    if (t === 1) return 1;
-    if (t < 0.5) return 0.5 * Math.pow(2, 20 * t - 10);
-    return 1 - 0.5 * Math.pow(2, -20 * t + 10);
-  },
-
-  // Sine
-  easeInSine:    (t) => 1 - Math.cos((t * Math.PI) / 2),
-  easeOutSine:   (t) => Math.sin((t * Math.PI) / 2),
-  easeInOutSine: (t) => -(Math.cos(Math.PI * t) - 1) / 2,
-
-  // Back (overshoot)
-  easeOutBack: (t) => {
-    const c1 = 1.70158, c3 = c1 + 1;
-    return 1 + c3 * Math.pow(t - 1, 3) + c1 * Math.pow(t - 1, 2);
-  },
-  easeInBack: (t) => {
-    const c1 = 1.70158, c3 = c1 + 1;
-    return c3 * t * t * t - c1 * t * t;
-  },
-  easeInOutBack: (t) => {
-    const c1 = 1.70158, c2 = c1 * 1.525;
-    return t < 0.5
-      ? (Math.pow(2 * t, 2) * ((c2 + 1) * 2 * t - c2)) / 2
-      : (Math.pow(2 * t - 2, 2) * ((c2 + 1) * (t * 2 - 2) + c2) + 2) / 2;
-  },
-
-  // Elastic
-  easeOutElastic: (t) => {
-    const c4 = (2 * Math.PI) / 3;
-    if (t === 0) return 0;
-    if (t === 1) return 1;
-    return Math.pow(2, -10 * t) * Math.sin((t * 10 - 0.75) * c4) + 1;
-  },
-};
-
-// ── Core interpolation helpers ──────────────────────────────────────────────
-
-// Clamp a value to [min, max]
-const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-
-// interpolate([0, 0.5, 1], [0, 100, 50], ease?) -> fn(t)
-// Popmotion-style: linearly maps t across input keyframes to output values,
-// with optional easing per segment (single fn or array of fns).
-function interpolate(input, output, ease = Easing.linear) {
-  return (t) => {
-    if (t <= input[0]) return output[0];
-    if (t >= input[input.length - 1]) return output[output.length - 1];
-    for (let i = 0; i < input.length - 1; i++) {
-      if (t >= input[i] && t <= input[i + 1]) {
-        const span = input[i + 1] - input[i];
-        const local = span === 0 ? 0 : (t - input[i]) / span;
-        const easeFn = Array.isArray(ease) ? (ease[i] || Easing.linear) : ease;
-        const eased = easeFn(local);
-        return output[i] + (output[i + 1] - output[i]) * eased;
-      }
-    }
-    return output[output.length - 1];
-  };
-}
-
-// animate({from, to, start, end, ease})(t) — simpler single-segment tween.
-// Returns `from` before `start`, `to` after `end`.
-function animate({ from = 0, to = 1, start = 0, end = 1, ease = Easing.easeInOutCubic }) {
-  return (t) => {
-    if (t <= start) return from;
-    if (t >= end) return to;
-    const local = (t - start) / (end - start);
-    return from + (to - from) * ease(local);
-  };
-}
-
-// ── Timeline context ────────────────────────────────────────────────────────
-
-const TimelineContext = React.createContext({ time: 0, duration: 10, playing: false });
-
-const useTime = () => React.useContext(TimelineContext).time;
-const useTimeline = () => React.useContext(TimelineContext);
-
-// ── Sprite ──────────────────────────────────────────────────────────────────
-// Renders children only when the playhead is inside [start, end]. Provides
-// a sub-context with `localTime` (seconds since start) and `progress` (0..1).
-//
-//   <Sprite start={2} end={5}>
-//     {({ localTime, progress }) => <Thing x={progress * 100} />}
-//   </Sprite>
-//
-// Or as a plain wrapper — children can call useSprite() themselves.
-
-const SpriteContext = React.createContext({ localTime: 0, progress: 0, duration: 0 });
-const useSprite = () => React.useContext(SpriteContext);
-
-function Sprite({ start = 0, end = Infinity, children, keepMounted = false }) {
-  const { time } = useTimeline();
-  const visible = time >= start && time <= end;
-  if (!visible && !keepMounted) return null;
-
-  const duration = end - start;
-  const localTime = Math.max(0, time - start);
-  const progress = duration > 0 && isFinite(duration)
-    ? clamp(localTime / duration, 0, 1)
-    : 0;
-
-  const value = { localTime, progress, duration, visible };
-
-  return (
-    <SpriteContext.Provider value={value}>
-      {typeof children === 'function' ? children(value) : children}
-    </SpriteContext.Provider>
-  );
-}
-
-// ── Sample sprite components ────────────────────────────────────────────────
-
-// TextSprite: fades/slides text in on entry, holds, then fades out on exit.
-// Props: text, x, y, size, color, font, entryDur, exitDur, align
-function TextSprite({
-  text,
-  x = 0, y = 0,
-  size = 48,
-  color = '#111',
-  font = 'Inter, system-ui, sans-serif',
-  weight = 600,
-  entryDur = 0.45,
-  exitDur = 0.35,
-  entryEase = Easing.easeOutBack,
-  exitEase = Easing.easeInCubic,
-  align = 'left',
-  letterSpacing = '-0.01em',
-}) {
-  const { localTime, duration } = useSprite();
-  const exitStart = Math.max(0, duration - exitDur);
-
-  let opacity = 1;
-  let ty = 0;
-
-  if (localTime < entryDur) {
-    const t = entryEase(clamp(localTime / entryDur, 0, 1));
-    opacity = t;
-    ty = (1 - t) * 16;
-  } else if (localTime > exitStart) {
-    const t = exitEase(clamp((localTime - exitStart) / exitDur, 0, 1));
-    opacity = 1 - t;
-    ty = -t * 8;
-  }
-
-  const translateX = align === 'center' ? '-50%' : align === 'right' ? '-100%' : '0';
-
-  return (
-    <div style={{
-      position: 'absolute',
-      left: x, top: y,
-      transform: `translate(${translateX}, ${ty}px)`,
-      opacity,
-      fontFamily: font,
-      fontSize: size,
-      fontWeight: weight,
-      color,
-      letterSpacing,
-      whiteSpace: 'pre',
-      lineHeight: 1.1,
-      willChange: 'transform, opacity',
-    }}>
-      {text}
-    </div>
-  );
-}
-
-// ImageSprite: scales + fades in; optional Ken Burns drift during hold.
-function ImageSprite({
-  src,
-  x = 0, y = 0,
-  width = 400, height = 300,
-  entryDur = 0.6,
-  exitDur = 0.4,
-  kenBurns = false,
-  kenBurnsScale = 1.08,
-  radius = 12,
-  fit = 'cover',
-  placeholder = null, // {label: string} for striped placeholder
-}) {
-  const { localTime, duration } = useSprite();
-  const exitStart = Math.max(0, duration - exitDur);
-
-  let opacity = 1;
-  let scale = 1;
-
-  if (localTime < entryDur) {
-    const t = Easing.easeOutCubic(clamp(localTime / entryDur, 0, 1));
-    opacity = t;
-    scale = 0.96 + 0.04 * t;
-  } else if (localTime > exitStart) {
-    const t = Easing.easeInCubic(clamp((localTime - exitStart) / exitDur, 0, 1));
-    opacity = 1 - t;
-    scale = (kenBurns ? kenBurnsScale : 1) + 0.02 * t;
-  } else if (kenBurns) {
-    const holdSpan = exitStart - entryDur;
-    const holdT = holdSpan > 0 ? (localTime - entryDur) / holdSpan : 0;
-    scale = 1 + (kenBurnsScale - 1) * holdT;
-  }
-
-  const content = placeholder ? (
-    <div style={{
-      width: '100%', height: '100%',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      background: 'repeating-linear-gradient(135deg, #e9e6df 0 10px, #dcd8cf 10px 20px)',
-      color: '#6b6458',
-      fontFamily: 'JetBrains Mono, ui-monospace, monospace',
-      fontSize: 13,
-      letterSpacing: '0.04em',
-      textTransform: 'uppercase',
-    }}>
-      {placeholder.label || 'image'}
-    </div>
-  ) : (
-    <img src={src} alt="" style={{ width: '100%', height: '100%', objectFit: fit, display: 'block' }} />
-  );
-
-  return (
-    <div style={{
-      position: 'absolute',
-      left: x, top: y,
-      width, height,
-      opacity,
-      transform: `scale(${scale})`,
-      transformOrigin: 'center',
-      borderRadius: radius,
-      overflow: 'hidden',
-      willChange: 'transform, opacity',
-    }}>
-      {content}
-    </div>
-  );
-}
-
-// RectSprite: simple rectangle that animates position/size/color via props.
-// Useful demo primitive — takes a `render` fn for per-frame customization.
-function RectSprite({
-  x = 0, y = 0,
-  width = 100, height = 100,
-  color = '#111',
-  radius = 8,
-  entryDur = 0.4,
-  exitDur = 0.3,
-  render, // optional: (ctx) => style overrides
-}) {
-  const spriteCtx = useSprite();
-  const { localTime, duration } = spriteCtx;
-  const exitStart = Math.max(0, duration - exitDur);
-
-  let opacity = 1;
-  let scale = 1;
-
-  if (localTime < entryDur) {
-    const t = Easing.easeOutBack(clamp(localTime / entryDur, 0, 1));
-    opacity = clamp(localTime / entryDur, 0, 1);
-    scale = 0.4 + 0.6 * t;
-  } else if (localTime > exitStart) {
-    const t = Easing.easeInQuad(clamp((localTime - exitStart) / exitDur, 0, 1));
-    opacity = 1 - t;
-    scale = 1 - 0.15 * t;
-  }
-
-  const overrides = render ? render(spriteCtx) : {};
-
-  return (
-    <div style={{
-      position: 'absolute',
-      left: x, top: y,
-      width, height,
-      background: color,
-      borderRadius: radius,
-      opacity,
-      transform: `scale(${scale})`,
-      transformOrigin: 'center',
-      willChange: 'transform, opacity',
-      ...overrides,
-    }} />
-  );
-}
-
-
-// ── Font inlining ───────────────────────────────────────────────────────────
-// Copy every @font-face rule from the page into a <style> inside the svg's
-// foreignObject, with font URLs rewritten to data: URLs. Makes the svg
-// self-describing so serializing it alone (video export fast path) still
-// renders with the right fonts. Sets data-om-fonts-inlined on the svg when
-// done so the exporter can wait for it.
-
-function useInlineFontsInto(svgRef) {
-  React.useEffect(() => {
-    const svg = svgRef.current;
-    const host = svg && svg.querySelector('foreignObject > div');
-    if (!svg || !host) return;
-    let cancelled = false;
-    (async () => {
-      const rules = [];
-      for (const ss of document.styleSheets) {
-        let cssRules;
-        try { cssRules = ss.cssRules; } catch {
-          // Cross-origin sheet without crossorigin attr (e.g. the standard
-          // fonts.googleapis.com <link>) — fetch the CSS text directly and
-          // regex-extract the @font-face blocks.
-          if (ss.href) {
-            try {
-              const txt = await fetch(ss.href).then(r => { if (!r.ok) throw 0; return r.text(); });
-              for (const ff of (txt.match(/@font-face\s*{[^}]*}/g) || []))
-                rules.push({ css: ff, base: ss.href });
-            } catch {}
-          }
-          continue;
-        }
-        if (!cssRules) continue;
-        for (const r of cssRules) {
-          if (r.type === CSSRule.FONT_FACE_RULE) {
-            rules.push({ css: r.cssText, base: ss.href || location.href });
-          }
-        }
-      }
-      const toDataURL = (url) => fetch(url)
-        .then(r => { if (!r.ok) throw 0; return r.blob(); })
-        .then(b => new Promise(res => {
-          const fr = new FileReader();
-          fr.onload = () => res(fr.result);
-          fr.onerror = () => res(url);
-          fr.readAsDataURL(b);
-        }))
-        .catch(() => url);
-      const parts = await Promise.all(rules.map(async ({ css, base }) => {
-        const re = /url\((['"]?)([^'")]+)\1\)/g;
-        let out = css, m;
-        while ((m = re.exec(css))) {
-          const u = m[2];
-          if (u.startsWith('data:')) continue;
-          let abs; try { abs = new URL(u, base).href; } catch { continue; }
-          out = out.split(m[0]).join(`url("${await toDataURL(abs)}")`);
-        }
-        return out;
-      }));
-      if (cancelled || !parts.length) {
-        svg.setAttribute('data-om-fonts-inlined', 'true');
-        return;
-      }
-      const style = document.createElement('style');
-      style.textContent = parts.join('\n');
-      host.insertBefore(style, host.firstChild);
-      svg.setAttribute('data-om-fonts-inlined', 'true');
-    })();
-    return () => { cancelled = true; };
-  }, []);
-}
-
-
-function Stage({
-  width = 1280,
-  height = 720,
-  duration = 10,
-  background = '#f6f4ef',
-  fps = 60,
-  loop = true,
-  autoplay = true,
-  persistKey = 'animstage',
-  children,
-}) {
-  // Props arrive as strings when Stage is mounted via <x-import> (DC
-  // projects) — coerce so style={{width}} gets a number React can px-ify.
-  width = +width || 1280; height = +height || 720;
-  duration = +duration || 10; fps = +fps || 60;
-  if (typeof loop === 'string') loop = loop !== 'false';
-  if (typeof autoplay === 'string') autoplay = autoplay !== 'false';
-
-  const [time, setTime] = React.useState(() => {
-    try {
-      const v = parseFloat(localStorage.getItem(persistKey + ':t') || '0');
-      return isFinite(v) ? clamp(v, 0, duration) : 0;
-    } catch { return 0; }
-  });
-  const [playing, setPlaying] = React.useState(autoplay);
-  const [hoverTime, setHoverTime] = React.useState(null);
-  const [scale, setScale] = React.useState(1);
-
-  const stageRef = React.useRef(null);
-  const canvasRef = React.useRef(null);
-  const rafRef = React.useRef(null);
-  const lastTsRef = React.useRef(null);
-
-  // Persist playhead
-  React.useEffect(() => {
-    try { localStorage.setItem(persistKey + ':t', String(time)); } catch {}
-  }, [time, persistKey]);
-
-  // Auto-scale to fit viewport
-  React.useEffect(() => {
-    if (!stageRef.current) return;
-    const el = stageRef.current;
-    const measure = () => {
-      const barH = 44; // playback bar height
-      const s = Math.min(
-        el.clientWidth / width,
-        (el.clientHeight - barH) / height
-      );
-      setScale(Math.max(0.05, s));
-    };
-    measure();
-    const ro = new ResizeObserver(measure);
-    ro.observe(el);
-    window.addEventListener('resize', measure);
-    return () => {
-      ro.disconnect();
-      window.removeEventListener('resize', measure);
-    };
-  }, [width, height]);
-
-  // Animation loop
-  React.useEffect(() => {
-    if (!playing) {
-      lastTsRef.current = null;
-      return;
-    }
-    const step = (ts) => {
-      if (lastTsRef.current == null) lastTsRef.current = ts;
-      const dt = (ts - lastTsRef.current) / 1000;
-      lastTsRef.current = ts;
-      setTime((t) => {
-        let next = t + dt;
-        if (next >= duration) {
-          if (loop) next = next % duration;
-          else { next = duration; setPlaying(false); }
-        }
-        return next;
-      });
-      rafRef.current = requestAnimationFrame(step);
-    };
-    rafRef.current = requestAnimationFrame(step);
-    return () => {
-      if (rafRef.current) cancelAnimationFrame(rafRef.current);
-      lastTsRef.current = null;
-    };
-  }, [playing, duration, loop]);
-
-  // Keyboard: space = play/pause, ← → = seek
-  React.useEffect(() => {
-    const onKey = (e) => {
-      if (e.target && (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA')) return;
-      if (e.code === 'Space') {
-        e.preventDefault();
-        setPlaying(p => !p);
-      } else if (e.code === 'ArrowLeft') {
-        setTime(t => clamp(t - (e.shiftKey ? 1 : 0.1), 0, duration));
-      } else if (e.code === 'ArrowRight') {
-        setTime(t => clamp(t + (e.shiftKey ? 1 : 0.1), 0, duration));
-      } else if (e.key === '0' || e.code === 'Home') {
-        setTime(0);
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [duration]);
-
-  // Video-export protocol: the exporter dispatches this event per frame;
-  // pause + sync the playhead so the capture sees exactly that timestamp.
-  // Sync-seek capability: a seek marked detail.sync === true commits via
-  // ReactDOM.flushSync, so the stage DOM reflects the frame the moment
-  // dispatchEvent returns — the exporter keys off the data-om-sync-seek
-  // advertisement to drop its two-display-refresh settle (that wait only
-  // exists to let React's async commit land; serialization needs the
-  // committed DOM, not the paint). Feature-detected: without
-  // ReactDOM.flushSync the engine never advertises and every seek takes
-  // the async path. Unmarked seeks (scrubs, the host play bar) stay async.
-  React.useEffect(() => {
-    const el = canvasRef.current;
-    if (!el) return;
-    const canSyncSeek =
-      typeof ReactDOM !== 'undefined' &&
-      typeof ReactDOM.flushSync === 'function';
-    const onSeek = (e) => {
-      const apply = () => {
-        setPlaying(false);
-        setTime(clamp(e.detail.time, 0, duration));
-      };
-      // Safe here: a native DOM listener runs outside React's lifecycle,
-      // and dispatchEvent is synchronous, so the commit lands in the same
-      // JS task — the engine's rAF loop can't interleave before serialize.
-      if (canSyncSeek && e.detail && e.detail.sync === true) {
-        ReactDOM.flushSync(apply);
-      } else {
-        apply();
-      }
-    };
-    el.addEventListener('data-om-seek-to-time-frame', onSeek);
-    if (canSyncSeek) el.setAttribute('data-om-sync-seek', 'true');
-    return () => {
-      el.removeEventListener('data-om-seek-to-time-frame', onSeek);
-      el.removeAttribute('data-om-sync-seek');
-    };
-  }, [duration]);
-
-  // Inline @font-face rules into the svg's foreignObject so the svg is
-  // self-describing — serializing it alone (for video export) then renders
-  // with the right fonts. Sets data-om-fonts-inlined once done.
-  useInlineFontsInto(canvasRef);
-
-  const displayTime = hoverTime != null ? hoverTime : time;
-
-  const ctxValue = React.useMemo(
-    () => ({ time: displayTime, duration, playing, setTime, setPlaying }),
-    [displayTime, duration, playing]
-  );
-
-  return (
-    <div
-      ref={stageRef}
-      style={{
-        position: 'absolute', inset: 0,
-        display: 'flex', flexDirection: 'column',
-        alignItems: 'center',
-        background: '#0a0a0a',
-        fontFamily: 'Inter, system-ui, sans-serif',
-      }}
-    >
-      {/* Canvas area — vertically centered in remaining space */}
-      <div style={{
-        flex: 1,
-        width: '100%',
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        overflow: 'hidden',
-        minHeight: 0,
-      }}>
-        <svg
-          ref={canvasRef}
-          width={width} height={height}
-          data-om-exportable-video-with-duration-secs={duration}
-          style={{
-            transform: `scale(${scale})`,
-            transformOrigin: 'center',
-            flexShrink: 0,
-            boxShadow: '0 20px 60px rgba(0,0,0,0.4)',
-            display: 'block',
-          }}
-        >
-          <foreignObject x="0" y="0" width="100%" height="100%">
-            <div
-              xmlns="http://www.w3.org/1999/xhtml"
-              style={{
-                width, height,
-                background,
-                position: 'relative',
-                overflow: 'hidden',
-              }}
-            >
-              <TimelineContext.Provider value={ctxValue}>
-                {children}
-              </TimelineContext.Provider>
-            </div>
-          </foreignObject>
-        </svg>
-      </div>
-
-      {/* Playback bar — stacked below canvas, never overlapping */}
-      <PlaybackBar
-        time={displayTime}
-        actualTime={time}
-        duration={duration}
-        playing={playing}
-        onPlayPause={() => setPlaying(p => !p)}
-        onReset={() => { setTime(0); }}
-        onSeek={(t) => setTime(t)}
-        onHover={(t) => setHoverTime(t)}
-      />
-    </div>
-  );
-}
-
-// ── Playback bar ────────────────────────────────────────────────────────────
-// Play/pause, return-to-begin, scrub track, time display.
-// Uses fixed-width time fields so layout doesn't thrash.
-
-function PlaybackBar({ time, duration, playing, onPlayPause, onReset, onSeek, onHover }) {
-  const trackRef = React.useRef(null);
-  const [dragging, setDragging] = React.useState(false);
-
-  const timeFromEvent = React.useCallback((e) => {
-    const rect = trackRef.current.getBoundingClientRect();
-    const x = clamp((e.clientX - rect.left) / rect.width, 0, 1);
-    return x * duration;
-  }, [duration]);
-
-  const onTrackMove = (e) => {
-    if (!trackRef.current) return;
-    const t = timeFromEvent(e);
-    if (dragging) {
-      onSeek(t);
-    } else {
-      onHover(t);
-    }
-  };
-
-  const onTrackLeave = () => {
-    if (!dragging) onHover(null);
-  };
-
-  const onTrackDown = (e) => {
-    setDragging(true);
-    const t = timeFromEvent(e);
-    onSeek(t);
-    onHover(null);
-  };
-
-  React.useEffect(() => {
-    if (!dragging) return;
-    const onUp = () => setDragging(false);
-    const onMove = (e) => {
-      if (!trackRef.current) return;
-      const t = timeFromEvent(e);
-      onSeek(t);
-    };
-    window.addEventListener('mouseup', onUp);
-    window.addEventListener('mousemove', onMove);
-    return () => {
-      window.removeEventListener('mouseup', onUp);
-      window.removeEventListener('mousemove', onMove);
-    };
-  }, [dragging, timeFromEvent, onSeek]);
-
-  const pct = duration > 0 ? (time / duration) * 100 : 0;
-  const fmt = (t) => {
-    const total = Math.max(0, t);
-    const m = Math.floor(total / 60);
-    const s = Math.floor(total % 60);
-    const cs = Math.floor((total * 100) % 100);
-    return `${String(m).padStart(1, '0')}:${String(s).padStart(2, '0')}.${String(cs).padStart(2, '0')}`;
-  };
-
-  const mono = 'JetBrains Mono, ui-monospace, SFMono-Regular, monospace';
-
-  return (
-    <div data-omelette-chrome style={{
-      display: 'flex', alignItems: 'center', gap: 12,
-      padding: '8px 16px',
-      background: 'rgba(20,20,20,0.92)',
-      borderTop: '1px solid rgba(255,255,255,0.08)',
-      width: '100%',
-      maxWidth: 680,
-      alignSelf: 'center',
-
-      borderRadius: 8,
-      color: '#f6f4ef',
-      fontFamily: 'Inter, system-ui, sans-serif',
-      userSelect: 'none',
-      flexShrink: 0,
-    }}>
-      <IconButton onClick={onReset} title="Return to start (0)">
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-          <path d="M3 2v10M12 2L5 7l7 5V2z" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round"/>
-        </svg>
-      </IconButton>
-      <IconButton onClick={onPlayPause} title="Play/pause (space)">
-        {playing ? (
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <rect x="3" y="2" width="3" height="10" fill="currentColor"/>
-            <rect x="8" y="2" width="3" height="10" fill="currentColor"/>
-          </svg>
-        ) : (
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M3 2l9 5-9 5V2z" fill="currentColor"/>
-          </svg>
-        )}
-      </IconButton>
-
-      {/* Current time: fixed width so it doesn't thrash */}
-      <div style={{
-        fontFamily: mono,
-        fontSize: 12,
-        fontVariantNumeric: 'tabular-nums',
-        width: 64, textAlign: 'right',
-        color: '#f6f4ef',
-      }}>
-        {fmt(time)}
-      </div>
-
-      {/* Scrub track */}
-      <div
-        ref={trackRef}
-        onMouseMove={onTrackMove}
-        onMouseLeave={onTrackLeave}
-        onMouseDown={onTrackDown}
-        style={{
-          flex: 1,
-          height: 22,
-          position: 'relative',
-          cursor: 'pointer',
-          display: 'flex', alignItems: 'center',
-        }}
-      >
-        <div style={{
-          position: 'absolute',
-          left: 0, right: 0, height: 4,
-          background: 'rgba(255,255,255,0.12)',
-          borderRadius: 2,
-        }}/>
-        <div style={{
-          position: 'absolute',
-          left: 0, width: `${pct}%`, height: 4,
-          background: 'oklch(72% 0.12 250)',
-          borderRadius: 2,
-        }}/>
-        <div style={{
-          position: 'absolute',
-          left: `${pct}%`, top: '50%',
-          width: 12, height: 12,
-          marginLeft: -6, marginTop: -6,
-          background: '#fff',
-          borderRadius: 6,
-          boxShadow: '0 2px 4px rgba(0,0,0,0.4)',
-        }}/>
-      </div>
-
-      {/* Duration: fixed width */}
-      <div style={{
-        fontFamily: mono,
-        fontSize: 12,
-        fontVariantNumeric: 'tabular-nums',
-        width: 64, textAlign: 'left',
-        color: 'rgba(246,244,239,0.55)',
-      }}>
-        {fmt(duration)}
-      </div>
-
-      {typeof VideoEncoder !== 'undefined' && (
-        <IconButton
-          title="Export video"
-          onClick={() => window.parent.postMessage({ type: 'omelette:request-video-export' }, '*')}
-        >
-          <svg width="14" height="14" viewBox="0 0 14 14" fill="none">
-            <path d="M7 2v7m0 0L4 6m3 3l3-3M2 12h10" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </IconButton>
-      )}
-    </div>
-  );
-}
-
-function IconButton({ children, onClick, title }) {
-  const [hover, setHover] = React.useState(false);
-  return (
-    <button
-      onClick={onClick}
-      title={title}
-      onMouseEnter={() => setHover(true)}
-      onMouseLeave={() => setHover(false)}
-      style={{
-        width: 28, height: 28,
-        display: 'flex', alignItems: 'center', justifyContent: 'center',
-        background: hover ? 'rgba(255,255,255,0.12)' : 'rgba(255,255,255,0.04)',
-        border: '1px solid rgba(255,255,255,0.1)',
-        borderRadius: 6,
-        color: '#f6f4ef',
-        cursor: 'pointer',
-        padding: 0,
-        transition: 'background 120ms',
-      }}
-    >
-      {children}
-    </button>
-  );
-}
-
-
-// ── VideoSprite ─────────────────────────────────────────────────────────────
-// Renders a <video> that loops within [start,end] of its source at `speed`,
-// kept in sync with the Stage's playhead. Carries the
-// data-om-exportable-video-play-* attrs so video export can mix its audio.
-//
-//   <VideoSprite src="clip.mp4" start={2} end={5} speed={1}
-//     style={{ width: 640, height: 360 }} />
-
-function VideoSprite({ src, start = 0, end, speed = 1, style, ...rest }) {
-  start = +start || 0; speed = +speed || 1;
-  if (end != null) end = +end || undefined;
-  const t = useTime();
-  const ref = React.useRef(null);
-  const span = Math.max(0.001, ((end ?? start + 1) - start));
-  React.useEffect(() => {
-    const v = ref.current;
-    if (!v || v.readyState < 1) return;
-    const target = start + ((t * speed) % span);
-    if (Math.abs(v.currentTime - target) > 0.05) v.currentTime = target;
-  }, [t, start, span, speed]);
-  return (
-    <video
-      ref={ref}
-      src={src}
-      muted playsInline preload="auto"
-      data-om-exportable-video-play-start={start}
-      data-om-exportable-video-play-end={end ?? start + span}
-      data-om-exportable-video-play-speed={speed}
-      style={{ display: 'block', objectFit: 'cover', ...style }}
-      {...rest}
-    />
-  );
-}
-
-
-Object.assign(window, {
-  Easing, interpolate, animate, clamp,
-  TimelineContext, useTime, useTimeline,
-  Sprite, SpriteContext, useSprite,
-  TextSprite, ImageSprite, RectSprite, VideoSprite,
-  Stage, PlaybackBar,
-});
-
-
-
-/* ===== fwf-scene.jsx (merged) ===== */
-
 // FWF Biogas Facility — promotional video scene, built on animations.jsx (Stage/Sprite).
 // Brand: EnergiDrop (blue / gold-flame / sky / gray) — colors sampled from EnergiDrop_Logo_Whiteback.png.
 // Runtime: 4:42 (282s). (Storyboard target was 4:00; this cut runs the full 282s.)
@@ -1022,22 +131,24 @@ Object.assign(window, {
   // ── Footage control: swap stock clips + drop in real shoot footage ─────────
   // Stock library (paths become window.__resources blob URLs in the bundled cut).
   const STOCK = {
-    'Outfall / consolidation': window.__resources.res_footage_sm_outfall_mp4,
-    'CHP hall': window.__resources.res_footage_sm_chp_mp4,
-    'CNG / tanker': window.__resources.res_footage_sm_cng_mp4,
-    'CO₂ / cryo': window.__resources.res_footage_sm_co2_mp4,
-    'Closing aerial': window.__resources.res_footage_sm_closing_aerial_mp4,
-    'Aeration aerial': window.__resources.res_footage_sm_aeraerial_mp4,
-    'Aeration basin': window.__resources.res_footage_sm_aerbasin_mp4,
-    'Treatment tanks': window.__resources.res_footage_sm_agri_mp4,
-    'Tank farm': window.__resources.res_footage_sm_agri2_mp4,
-    'Solar + storage': window.__resources.res_footage_sm_commerce_mp4,
-    'Gas storage': window.__resources.res_footage_sm_petro_mp4,
-    'Workers / crew': window.__resources.res_footage_sm_trio_mp4,
-    'Leaves / organics': window.__resources.res_footage_sm_leaves_mp4,
-    'Mulch / digestate': window.__resources.res_footage_sm_mulch_mp4,
-    'Ocean / anchovies': window.__resources.res_footage_sm_anchovies_mp4,
-    'Waste sorting': window.__resources.res_footage_sm_sifting_mp4,
+    'Outfall / consolidation': 'assets/footage/sm/outfall.mp4',
+    'CHP hall': 'assets/footage/sm/chp.mp4',
+    'CNG / tanker': 'assets/footage/sm/cng.mp4',
+    'CO₂ / cryo': 'assets/footage/sm/co2.mp4',
+    'Closing aerial': 'assets/footage/sm/closing_aerial.mp4',
+    'Aeration aerial': 'assets/footage/sm/aeraerial.mp4',
+    'Aeration basin': 'assets/footage/sm/aerbasin.mp4',
+    'Treatment tanks': 'assets/footage/sm/agri.mp4',
+    'Tank farm': 'assets/footage/sm/agri2.mp4',
+    'Solar + storage': 'assets/footage/sm/commerce.mp4',
+    'Gas storage': 'assets/footage/sm/petro.mp4',
+    'Workers / crew': 'assets/footage/sm/trio.mp4',
+    'Leaves / organics': 'assets/footage/sm/leaves.mp4',
+    'Mulch / digestate': 'assets/footage/sm/mulch.mp4',
+    'Ocean / anchovies': 'assets/footage/sm/anchovies.mp4',
+    'Waste sorting': 'assets/footage/sm/sifting.mp4',
+    'Gemini AI Visualisation': 'assets/footage/gemini_v1.mp4',
+    'Denmark Biogas Plant': 'assets/footage/sm/denmark_plant.mp4',
   };
 
   const FootageStore = (function () {
@@ -1079,6 +190,7 @@ Object.assign(window, {
       setEdit(v) { window.__fwfEdit = v; emit(); },
       bindEl(id, el) { if (el) slotEls.set(id, el); else slotEls.delete(id); },
       labelOf(id) { const s = slots.get(id); return s ? s.label : id; },
+      // Topmost mounted slot under a viewport point (smallest containing rect wins).
       slotAt(x, y) {
         let best = null, bestArea = Infinity;
         slotEls.forEach((el, id) => {
@@ -1132,6 +244,8 @@ Object.assign(window, {
     const src = FootageStore.resolve(id, stock);
     const edit = !!window.__fwfEdit;
     const ref = React.useRef(null);
+    // Register this slot's live DOM node so the viewport-level drop layer can
+    // hit-test it (native DnD does not fire reliably inside the SVG foreignObject).
     React.useEffect(() => { FootageStore.bindEl(id, ref.current); return () => FootageStore.bindEl(id, null); }, [id]);
     return (
       <div ref={ref} style={{ position: 'absolute', inset: 0, overflow: 'hidden', pointerEvents: 'none' }}>
@@ -1150,13 +264,15 @@ Object.assign(window, {
     useFootage();
     React.useEffect(() => {
       const R = FootageStore.register;
-      R('scene-outfall', 'GROUND · WWTW Outfall / Consolidation Tank', window.__resources.res_footage_sm_outfall_mp4);
-      R('scene-chp', 'LIVE PILOT · Phase 1 Pilot CHP Unit — Running Today', window.__resources.res_footage_sm_chp_mp4);
-      R('scene-cng', 'GROUND · CNG Tube Trailer at Loading Bay', window.__resources.res_footage_sm_cng_mp4);
-      R('scene-co2', 'GROUND · CO₂ Cryogenic Storage Vessel', window.__resources.res_footage_sm_co2_mp4);
-      R('title-bg', 'Title backdrop', window.__resources.res_footage_sm_sifting_mp4);
-      R('blockflow-bg', 'Block-flow backdrop', window.__resources.res_footage_sm_aerbasin_mp4);
-      R('closing-aerial', 'Closing aerial', window.__resources.res_footage_sm_closing_aerial_mp4);
+      R('scene-outfall', 'GROUND · WWTW Outfall / Consolidation Tank', 'assets/footage/sm/outfall.mp4');
+      R('scene-chp', 'LIVE PILOT · Phase 1 Pilot CHP Unit — Running Today', 'assets/footage/sm/chp.mp4');
+      R('scene-cng', 'GROUND · CNG Tube Trailer at Loading Bay', 'assets/footage/sm/cng.mp4');
+      R('scene-co2', 'GROUND · CO₂ Cryogenic Storage Vessel', 'assets/footage/sm/co2.mp4');
+      R('title-bg', 'Title backdrop', 'assets/footage/gemini_v1.mp4');
+      R('blockflow-bg', 'Block-flow backdrop', 'assets/footage/sm/aerbasin.mp4');
+      R('closing-aerial', 'Closing aerial', 'assets/footage/sm/closing_aerial.mp4');
+      R('gemini-v1', 'Gemini AI Visualisation', 'assets/footage/gemini_v1.mp4');
+      R('denmark-plant', 'Denmark Biogas Plant', 'assets/footage/sm/denmark_plant.mp4');
       (typeof BENEFITS !== 'undefined' ? BENEFITS : []).forEach(b => { if (b.video) R('impact-' + b.label.replace(/[^a-z0-9]+/gi, '-').toLowerCase(), 'Impact bg · ' + b.metric, b.video); });
     }, []);
     const [open, setOpen] = React.useState(false);
@@ -1298,6 +414,9 @@ Object.assign(window, {
     );
   }
 
+  // Viewport-level drop catcher. Lives OUTSIDE the scaled SVG foreignObject (where
+  // native drag/drop events don't fire in Chrome), so drops land reliably; it maps
+  // the drop point back to the mounted VideoSlot beneath the cursor via slotAt().
   function EditDropLayer() {
     useFootage();
     const edit = !!window.__fwfEdit;
@@ -1321,9 +440,9 @@ Object.assign(window, {
       onDragOver: onOver, onDragEnter: onOver, onDragLeave: () => setHover(null), onDrop,
       style: { position: 'fixed', inset: 0, zIndex: 2147482000, cursor: 'copy' },
     },
-      React.createElement('div', { style: { position: 'fixed', top: 58, left: '50%', transform: 'translateX(-50%)', fontFamily: FB, fontSize: 14, color: '#fff', background: 'rgba(5,10,20,0.92)', border: `1px solid ${BORDER}`, padding: '7px 16px', borderRadius: 6, pointerEvents: 'none', letterSpacing: 0.3, whiteSpace: 'nowrap' } }, 'Edit mode \u2014 drag a video file onto any shot to replace it'),
+      React.createElement('div', { style: { position: 'fixed', top: 58, left: '50%', transform: 'translateX(-50%)', fontFamily: FB, fontSize: 14, color: '#fff', background: 'rgba(5,10,20,0.92)', border: `1px solid ${BORDER}`, padding: '7px 16px', borderRadius: 6, pointerEvents: 'none', letterSpacing: 0.3, whiteSpace: 'nowrap' } }, 'Edit mode — drag a video file onto any shot to replace it'),
       hover && React.createElement('div', { style: { position: 'fixed', left: hover.rect.left, top: hover.rect.top, width: hover.rect.width, height: hover.rect.height, border: `3px dashed ${SKY}`, borderRadius: 8, background: 'rgba(0,144,224,0.16)', pointerEvents: 'none', boxSizing: 'border-box' } },
-        React.createElement('div', { style: { position: 'absolute', left: 10, bottom: 10, fontFamily: FB, fontSize: 14, color: '#fff', background: 'rgba(5,10,20,0.9)', padding: '5px 11px', borderRadius: 5, letterSpacing: 0.3 } }, 'Drop clip \u2192 ' + (hover.label || hover.id))
+        React.createElement('div', { style: { position: 'absolute', left: 10, bottom: 10, fontFamily: FB, fontSize: 14, color: '#fff', background: 'rgba(5,10,20,0.9)', padding: '5px 11px', borderRadius: 5, letterSpacing: 0.3 } }, 'Drop clip → ' + (hover.label || hover.id))
       )
     );
   }
@@ -1569,7 +688,7 @@ Object.assign(window, {
     const dashOffset = -((localTime * 46) % 40);
     const level = 0.42 + 0.06 * Math.sin(localTime * 1.1);
     return (
-        <SceneShell tag="GROUND" title="WWTW Outfall / Consolidation Tank" stat="Fishwater Flats WWTW · Gqeberha, Eastern Cape" videoId="scene-outfall" video={window.__resources.res_footage_sm_outfall_mp4} videoEnd={8}>
+        <SceneShell tag="GROUND" title="WWTW Outfall / Consolidation Tank" stat="Fishwater Flats WWTW · Gqeberha, Eastern Cape" videoId="scene-outfall" video="assets/footage/sm/outfall.mp4" videoEnd={8}>
           <svg width="720" height="360" viewBox="0 0 720 360" fill="none">
             <rect x="40" y="40" width="220" height="200" rx="10" stroke={BLUE} strokeWidth="3" fill="rgba(0,144,224,0.05)" />
             <rect x={44} y={40 + 200 * (1 - level)} width="212" height={200 * level - 4} fill="rgba(0,144,224,0.28)" />
@@ -1599,7 +718,7 @@ Object.assign(window, {
     const needleAngle = -90 + 180 * Easing.easeOutCubic(rampT);
     const spin = localTime * 130;
     return (
-        <SceneShell tag="LIVE PILOT" title="Phase 1 Pilot CHP Unit — Running Today" stat="Phase 1 Pilot Plant · operational now · exported to NMBM LV grid" videoId="scene-chp" video={window.__resources.res_footage_sm_chp_mp4} videoEnd={7}>
+        <SceneShell tag="LIVE PILOT" title="Phase 1 Pilot CHP Unit — Running Today" stat="Phase 1 Pilot Plant · operational now · exported to NMBM LV grid" videoId="scene-chp" video="assets/footage/sm/chp.mp4" videoEnd={7}>
           <div style={{ display: 'flex', alignItems: 'center', gap: 90 }}>
             <svg width="220" height="220" viewBox="0 0 220 220">
               <circle cx="110" cy="110" r="90" stroke={BLUE} strokeWidth="3" fill="rgba(0,144,224,0.05)" />
@@ -1642,7 +761,7 @@ Object.assign(window, {
     const dashOffset = -((localTime * 60) % 36);
     const fill = Math.min(1, localTime / 4);
     return (
-        <SceneShell tag="GROUND" title="CNG Tube Trailer at Loading Bay" stat="Virtual pipeline — additional routes under evaluation · Vehicle fuel — future expansion" videoId="scene-cng" video={window.__resources.res_footage_sm_cng_mp4} videoEnd={6}>
+        <SceneShell tag="GROUND" title="CNG Tube Trailer at Loading Bay" stat="Virtual pipeline — additional routes under evaluation · Vehicle fuel — future expansion" videoId="scene-cng" video="assets/footage/sm/cng.mp4" videoEnd={6}>
           <svg width="760" height="300" viewBox="0 0 760 300" fill="none">
             <rect x="40" y="90" width="150" height="120" rx="10" stroke={GOLD} strokeWidth="3" fill="rgba(251,183,8,0.06)" />
             <rect x={48} y={90 + 120 * (1 - fill)} width="134" height={120 * fill - 6} fill="rgba(251,183,8,0.3)" />
@@ -1675,7 +794,7 @@ Object.assign(window, {
       return { x, y, op, i };
     });
     return (
-        <SceneShell tag="GROUND" title="CO₂ Cryogenic Storage Vessel" stat="30 tpd · Cryogenic food-grade CO₂" videoId="scene-co2" video={window.__resources.res_footage_sm_co2_mp4} videoEnd={4}>
+        <SceneShell tag="GROUND" title="CO₂ Cryogenic Storage Vessel" stat="30 tpd · Cryogenic food-grade CO₂" videoId="scene-co2" video="assets/footage/sm/co2.mp4" videoEnd={4}>
           <svg width="720" height="360" viewBox="0 0 720 360" fill="none">
             <rect x="280" y="80" width="160" height="220" rx="80" stroke={SKY} strokeWidth="3" fill="rgba(143,224,255,0.06)" />
             <circle cx="360" cy="140" r="30" fill="rgba(143,224,255,0.18)" />
@@ -1763,13 +882,13 @@ Object.assign(window, {
         <FadeBox x={0} y={0} width={W} height={H} entryDur={0.8} exitDur={0.6}>
           <div style={{ position: 'absolute', inset: 0, background: INK, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 22 }}>
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-              <img src={window.__resources.res_Straits_Energy_Holdings_png} style={{ height: 160 }} />
+              <img src="assets/Straits_Energy_Holdings.png" style={{ height: 160 }} />
               <div style={{ fontFamily: FH, fontSize: 13, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: TXT_SUB }}>Project Owner</div>
               <div style={{ fontFamily: FH, fontSize: 13, fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase', color: BLUE }}>Powered by EnergiDrop</div>
             </div>
             <div style={{ width: 90, height: 3, background: BLUE }} />
             <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-              <img src={window.__resources.res_EnergiDrop_Logo_Transparent_png} style={{ height: 90, filter: 'drop-shadow(0 0 30px rgba(0,144,224,0.25))' }} />
+              <img src="assets/EnergiDrop_Logo_Transparent.png" style={{ height: 90, filter: 'drop-shadow(0 0 30px rgba(0,144,224,0.25))' }} />
               <div style={{ fontFamily: FH, fontSize: 13, fontWeight: 700, letterSpacing: 3, textTransform: 'uppercase', color: BLUE }}>Power &amp; Project Management Partner</div>
             </div>
             <div style={{ fontFamily: FH, fontSize: 58, fontWeight: 900, letterSpacing: 1, textTransform: 'uppercase', color: TXT_HI, textAlign: 'center', marginTop: 6 }}>
@@ -1919,7 +1038,7 @@ Object.assign(window, {
       <React.Fragment>
         <Sprite start={t} end={t + 20}>
           <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
-            <VideoSlot id="blockflow-bg" label="Block-flow backdrop" stock={window.__resources.res_footage_sm_aerbasin_mp4} start={0} end={20}
+            <VideoSlot id="blockflow-bg" label="Block-flow backdrop" stock="assets/footage/sm/aerbasin.mp4" start={0} end={20}
               style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.16, filter: 'brightness(0.5) saturate(1.0)' }} />
             <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 45%, rgba(3,7,11,0.55) 0%, rgba(3,7,11,0.92) 100%)' }} />
           </div>
@@ -1987,16 +1106,16 @@ Object.assign(window, {
   }
 
   const BENEFITS = [
-    { icon: 'wave', metric: 'Ocean protection', label: 'IMPACT 01', desc: 'Odour & discharge complaints resolved at source', video: window.__resources.res_footage_sm_aeraerial_mp4 },
-    { icon: 'landfill', metric: '>200 t/day', label: 'IMPACT 02', desc: 'Approved source-separated organics diverted from landfill into a monitored, traceable feedstock system', video: window.__resources.res_footage_sm_leaves_mp4 },
-    { icon: 'water', metric: 'Water recovery', label: 'IMPACT 03', desc: 'Treated water reuse for arid Eastern Cape industry', video: window.__resources.res_footage_sm_aerbasin_mp4 },
-    { icon: 'check', metric: 'Zero cost to NMBM', label: 'IMPACT 04', desc: 'Adds sludge-processing capacity and long-term operational resilience — at no municipal expense', video: window.__resources.res_footage_sm_agri_mp4 },
-    { icon: 'bolt', metric: '2 → 5 MWe', label: 'IMPACT 05', desc: 'Renewable baseload replacing fossil fuel in hard-to-electrify industrial heat', video: window.__resources.res_footage_sm_commerce_mp4 },
-    { icon: 'pipe', metric: '7.7 km pipeline', label: 'IMPACT 06', desc: 'Biomethane to nearby industry — gas upgrading, storage & delivery under licensed safety controls', video: window.__resources.res_footage_sm_petro_mp4 },
-    { icon: 'co2', metric: '30 tpd CO₂', label: 'IMPACT 07', desc: 'Cryogenic food-grade carbon dioxide', video: window.__resources.res_footage_sm_agri2_mp4 },
-    { icon: 'leaf', metric: 'Organic fertiliser', label: 'IMPACT 08', desc: 'Digestate for Eastern Cape agriculture', video: window.__resources.res_footage_sm_mulch_mp4 },
-    { icon: 'brick', metric: 'Kiln feedstock', label: 'IMPACT 09', desc: 'Digestate cake supplied to regional brick kilns', video: window.__resources.res_footage_sm_anchovies_mp4 },
-    { icon: 'people', metric: '100+ jobs', label: 'IMPACT 10', desc: 'Construction, O&M and supply-chain employment', video: window.__resources.res_footage_sm_trio_mp4 },
+    { icon: 'wave', metric: 'Ocean protection', label: 'IMPACT 01', desc: 'Odour & discharge complaints resolved at source', video: 'assets/footage/sm/aeraerial.mp4' },
+    { icon: 'landfill', metric: '>200 t/day', label: 'IMPACT 02', desc: 'Approved source-separated organics diverted from landfill into a monitored, traceable feedstock system', video: 'assets/footage/sm/leaves.mp4' },
+    { icon: 'water', metric: 'Water recovery', label: 'IMPACT 03', desc: 'Treated water reuse for arid Eastern Cape industry', video: 'assets/footage/sm/aerbasin.mp4' },
+    { icon: 'check', metric: 'Zero cost to NMBM', label: 'IMPACT 04', desc: 'Adds sludge-processing capacity and long-term operational resilience — at no municipal expense', video: 'assets/footage/sm/agri.mp4' },
+    { icon: 'bolt', metric: '2 → 5 MWe', label: 'IMPACT 05', desc: 'Renewable baseload replacing fossil fuel in hard-to-electrify industrial heat', video: 'assets/footage/sm/commerce.mp4' },
+    { icon: 'pipe', metric: '7.7 km pipeline', label: 'IMPACT 06', desc: 'Biomethane to nearby industry — gas upgrading, storage & delivery under licensed safety controls', video: 'assets/footage/sm/petro.mp4' },
+    { icon: 'co2', metric: '30 tpd CO₂', label: 'IMPACT 07', desc: 'Cryogenic food-grade carbon dioxide', video: 'assets/footage/sm/agri2.mp4' },
+    { icon: 'leaf', metric: 'Organic fertiliser', label: 'IMPACT 08', desc: 'Digestate for Eastern Cape agriculture', video: 'assets/footage/sm/mulch.mp4' },
+    { icon: 'brick', metric: 'Kiln feedstock', label: 'IMPACT 09', desc: 'Digestate cake supplied to regional brick kilns', video: 'assets/footage/sm/anchovies.mp4' },
+    { icon: 'people', metric: '100+ jobs', label: 'IMPACT 10', desc: 'Construction, O&M and supply-chain employment', video: 'assets/footage/sm/trio.mp4' },
   ];
 
   function BenefitCard({ start, end, item, tone }) {
@@ -2031,7 +1150,7 @@ Object.assign(window, {
         <Sprite start={base} end={base + 3}>
           <FadeBox x={0} y={0} width={W} height={H}>
             <div style={{ position: 'absolute', inset: 0, background: BLUE_INK, display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
-              <VideoSlot id="title-bg" label="Title backdrop" stock={window.__resources.res_footage_sm_sifting_mp4} start={0} end={3}
+              <VideoSlot id="title-bg" label="Title backdrop" stock="assets/footage/sm/sifting.mp4" start={0} end={3}
                 style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', opacity: 0.32, filter: 'brightness(0.7) saturate(1.05)' }} />
               <div style={{ position: 'absolute', inset: 0, background: 'radial-gradient(circle at 50% 50%, rgba(5,10,20,0.35) 0%, rgba(5,10,20,0.85) 100%)' }} />
               <div style={{ position: 'relative', fontFamily: FH, fontSize: 62, fontWeight: 900, color: TXT_HI, textAlign: 'center', letterSpacing: 1 }}>
@@ -2096,76 +1215,110 @@ Object.assign(window, {
     };
   }
 
-  const SITE_KEYFRAMES = [
-    { t: 0,   fx: 0.56, fy: 0.6,  z: 1.2,  label: 'Fishwater Flats WWTW — full footprint', sub: 'Preliminary General Layout · 24-0503-A04-001' },
-    { t: 2,   fx: 0.34, fy: 0.37, z: 2.0,  label: '3× CSTR Mesophilic Digesters', sub: 'Triton Digesters A / B / C · 43.2 m diameter each' },
-    { t: 4,   fx: 0.63, fy: 0.66, z: 2.1,  label: 'CHP & Transformer Area', sub: 'Embedded generation · biogas holder' },
-    { t: 6,   fx: 0.66, fy: 0.77, z: 2.2,  label: 'CO₂ Liquefaction & Gas Treatment', sub: 'Scrubbers · activated carbon · chiller train' },
-    { t: 8,   fx: 0.85, fy: 0.57, z: 2.1,  label: 'Gas Holder & BGU Area', sub: 'Biogas upgrading · external gasholder' },
-    { t: 9.5, fx: 0.56, fy: 0.6,  z: 1.35, label: 'One Integrated Plant', sub: 'Feedstock → energy → CO₂ → nutrients, on one site' },
+  // GES aerial fly-in — camera data from Google Earth Studio project files
+  // FWF Fly in .esp  (150 fr, 5 s): altitude descent 1.0 → 0.474 (normalized)
+  // FWF.esp          (300 fr, 10 s): low-altitude orbit, lon/lat drift < 0.0002
+  // Base imagery: FWF Site Layout (Anaergia satellite + CAD overlay, as delivered)
+  // Preferred 3D renders: 24-0503 B01 001 (3).pdf — swap image-slot stills once exported
+
+  const GES_FLYIN_ALT = [
+    { t: 0.00, alt: 1.000 },
+    { t: 0.80, alt: 0.474 },
+    { t: 1.00, alt: 0.340 },
   ];
 
-  function interpKeyframes(local, key) {
-    const times = SITE_KEYFRAMES.map(k => k.t);
-    const vals = SITE_KEYFRAMES.map(k => k[key]);
-    return interpolate(times, vals, Easing.easeInOutCubic)(local);
+  const GES_ORBIT_WP = [
+    { t: 0.00, fx: 0.55, fy: 0.50, z: 3.0, label: 'Fishwater Flats WWTW',    sub: 'Full plant footprint · Gqeberha, Eastern Cape' },
+    { t: 0.22, fx: 0.35, fy: 0.38, z: 3.8, label: '3× Triton Digesters',     sub: 'High-solids CSTR · 43.2 m Ø · ~21-day HRT' },
+    { t: 0.46, fx: 0.62, fy: 0.52, z: 4.2, label: 'CHP & Transformer Block', sub: 'Up to 5 MWe embedded generation' },
+    { t: 0.66, fx: 0.76, fy: 0.46, z: 3.9, label: 'Gas Holder & BGU',        sub: '2,400 Nm³/h biomethane · CO₂ liquefaction' },
+    { t: 0.84, fx: 0.78, fy: 0.62, z: 3.5, label: 'Gas Treatment & CO₂',    sub: 'Scrubbers · activated carbon · chiller train' },
+    { t: 1.00, fx: 0.55, fy: 0.50, z: 2.6, label: 'One Integrated Plant',    sub: 'Feedstock → energy → CO₂ → nutrients — one site' },
+  ];
+
+  function gesAltToZoom(alt) {
+    // Normalized GES altitude (1=max height) to CSS scale factor
+    return Math.min(8, 1.2 / Math.pow(Math.max(0.04, alt), 0.78));
   }
 
-  function SiteDiagramScene({ start, end }) {
+  function GESFlyInScene({ start, end }) {
     return (
-      <Sprite start={start} end={end} label="Plant layout flythrough">
-        <SiteDiagramInner />
+      <Sprite start={start} end={end} label="GES aerial fly-in · Fishwater Flats">
+        <GESFlyInInner />
       </Sprite>
     );
   }
 
-  function SiteDiagramInner() {
+  function GESFlyInInner() {
     const { localTime, duration } = useSprite();
-    const fx = interpKeyframes(localTime, 'fx');
-    const fy = interpKeyframes(localTime, 'fy');
-    const zoom = interpKeyframes(localTime, 'z');
-    const camTransform = `translate(${(0.5 - fx) * 100}%, ${(0.5 - fy) * 100}%) scale(${zoom})`;
-    const camOrigin = `${fx * 100}% ${fy * 100}%`;
+    const local = Math.max(0, Math.min(duration, localTime));
+    const FLY_DUR = Math.min(5, duration * 0.35);
+    const ORBIT_DUR = Math.max(0.01, duration - FLY_DUR);
+    let zoom, fx, fy, activeLabel, activeSub;
 
-    // active label (nearest keyframe segment)
-    let active = SITE_KEYFRAMES[0];
-    for (const k of SITE_KEYFRAMES) if (localTime >= k.t) active = k;
-    const segT = Math.max(0, Math.min(1, (localTime - active.t) / 1.1));
-    const labelOpacity = segT < 1 ? (segT < 0.15 ? segT / 0.15 : 1) : Math.max(0, 1 - (segT - 1) * 3);
+    if (local < FLY_DUR) {
+      // Phase 1: altitude descent (FWF Fly in .esp)
+      const p = clamp(local / FLY_DUR, 0, 1);
+      const alt = interpolate(GES_FLYIN_ALT.map(k => k.t), GES_FLYIN_ALT.map(k => k.alt), Easing.easeInOutCubic)(p);
+      zoom = gesAltToZoom(alt);
+      fx = 0.55; fy = 0.50;
+      activeLabel = 'Fishwater Flats WWTW';
+      activeSub = 'Gqeberha · Nelson Mandela Bay · Eastern Cape';
+    } else {
+      // Phase 2: low-altitude orbit (FWF.esp)
+      const p = clamp((local - FLY_DUR) / ORBIT_DUR, 0, 1);
+      fx    = interpolate(GES_ORBIT_WP.map(k => k.t), GES_ORBIT_WP.map(k => k.fx), Easing.easeInOutCubic)(p);
+      fy    = interpolate(GES_ORBIT_WP.map(k => k.t), GES_ORBIT_WP.map(k => k.fy), Easing.easeInOutCubic)(p);
+      zoom  = interpolate(GES_ORBIT_WP.map(k => k.t), GES_ORBIT_WP.map(k => k.z),  Easing.easeInOutCubic)(p);
+      let wi = 0;
+      for (let i = 0; i < GES_ORBIT_WP.length; i++) if (p >= GES_ORBIT_WP[i].t) wi = i;
+      const wp   = GES_ORBIT_WP[wi];
+      const wpNx = GES_ORBIT_WP[wi + 1] || wp;
+      const sp   = wpNx.t > wp.t ? (p - wp.t) / (wpNx.t - wp.t) : 1;
+      const slo  = sp < 0.15 ? sp / 0.15 : sp > 0.85 ? Math.max(0, (1 - sp) / 0.15) : 1;
+      activeLabel = slo > 0.05 ? wp.label : '';
+      activeSub   = wp.sub;
+    }
 
-    const entryFade = Math.min(1, localTime / 0.6);
-    const exitFade = Math.min(1, Math.max(0, (duration - localTime) / 0.6));
+    const tx = (0.5 - fx) * 100 * (zoom - 1) / zoom;
+    const ty = (0.5 - fy) * 100 * (zoom - 1) / zoom;
+    const entryFade  = clamp(local / 0.6, 0, 1);
+    const exitFade   = clamp((duration - local) / 0.5, 0, 1);
     const boxOpacity = Math.min(entryFade, exitFade);
-
-    const kbProgress = Math.max(0, Math.min(1, localTime / duration));
-    // fly IN for the first half, back OUT for the second — a push into the plant and away
-    const flyProgress = kbProgress < 0.5 ? kbProgress * 2 : (1 - kbProgress) * 2;
+    const labelOpacity = local < FLY_DUR
+      ? clamp((local - FLY_DUR * 0.6) / (FLY_DUR * 0.22), 0, 1)
+      : clamp((local - FLY_DUR) / 0.55, 0, 1) * clamp((duration - local) / 0.5, 0, 1);
 
     return (
       <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', opacity: boxOpacity, background: INK }}>
-        {/* animated 3D plant model — fly in, then back out */}
-        <div style={{ position: 'absolute', inset: 0 }}>
-          <SeqImg frames={FRAMES.full} progress={flyProgress} />
+        <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
+          <img src="assets/maps/fwf_site_layout.png" alt="" style={{
+            position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover',
+            transform: 'translate(' + tx + '%, ' + ty + '%) scale(' + zoom + ')',
+            transformOrigin: '50% 50%', imageRendering: 'auto', willChange: 'transform',
+          }} />
         </div>
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(3,7,11,0.55) 0%, rgba(3,7,11,0.18) 42%, rgba(3,7,11,0.8) 100%)' }} />
-        <div style={{ position: 'absolute', left: 60, top: 48, fontFamily: FH, fontSize: 20, fontWeight: 700, letterSpacing: 4, color: BLUE, textTransform: 'uppercase' }}>
-          Phase 2/3 Plant Layout &middot; EPC Co-Digestion Design
+        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(3,7,11,0.52) 0%, rgba(3,7,11,0.07) 36%, rgba(3,7,11,0.07) 64%, rgba(3,7,11,0.88) 100%)' }} />
+        <div style={{ position: 'absolute', left: 60, top: 44, fontFamily: FH, fontSize: 15, fontWeight: 700, letterSpacing: 3, color: SKY, textTransform: 'uppercase', background: PANEL_BG, padding: '6px 14px', borderRadius: 4, border: '1px solid ' + BORDER }}>
+          Google Earth Studio · FWF Fly-In
         </div>
-        <div style={{ position: 'absolute', left: 60, top: 78, fontFamily: FB, fontSize: 14, color: TXT_DIM }}>
-          3D plant model &middot; every structure placed from the engineering drawings
+        <div style={{ position: 'absolute', left: 60, top: 78, fontFamily: FB, fontSize: 13, color: TXT_DIM }}>
+          Camera path from GES project · Anaergia layout overlay · real satellite imagery
         </div>
-
-        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 90, textAlign: 'center', opacity: labelOpacity }}>
-          <div style={{ fontFamily: FH, fontSize: 36, fontWeight: 700, color: TXT_HI }}>{active.label}</div>
-          <div style={{ fontFamily: FB, fontSize: 19, color: TXT_SUB, marginTop: 6 }}>{active.sub}</div>
+        <StatusBadge kind="PROPOSED" />
+        <div style={{ position: 'absolute', left: 60, right: 60, bottom: 66, height: 2, background: 'rgba(143,224,255,0.15)' }}>
+          <div style={{ height: '100%', width: clamp(local / Math.max(1, duration), 0, 1) * 100 + '%', background: BLUE }} />
+        </div>
+        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 92, textAlign: 'center', opacity: labelOpacity }}>
+          <div style={{ fontFamily: FH, fontSize: 42, fontWeight: 700, color: TXT_HI, letterSpacing: 0.3 }}>{activeLabel}</div>
+          <div style={{ fontFamily: FB, fontSize: 19, color: TXT_SUB, marginTop: 6 }}>{activeSub}</div>
         </div>
       </div>
     );
   }
 
-  // ── Existing vs. Proposed status badge (top-right) ──────────────────────
-  // 5-level commercial status scheme mandated by storyboard R0v3 (plus the two
-  // physical build-state keys). Never present these as equally committed.
+  function SiteDiagramScene({ start, end }) { return <GESFlyInScene start={start} end={end} />; }
+
   const STATUS_MAP = {
     EXISTING:     { label: 'Existing on Site',        tone: SKY },
     PROPOSED:     { label: 'Proposed \u2014 To Be Built', tone: GOLD },
@@ -2193,19 +1346,21 @@ Object.assign(window, {
   // so the model animates instead of sitting as a still. Literal paths so the
   // merged/standalone build rewrites each to window.__resources.*.
   const FRAMES = {
-    full: [window.__resources.res_3d_seq_full_01_jpg, window.__resources.res_3d_seq_full_02_jpg, window.__resources.res_3d_seq_full_03_jpg, window.__resources.res_3d_seq_full_04_jpg, window.__resources.res_3d_seq_full_05_jpg, window.__resources.res_3d_seq_full_06_jpg, window.__resources.res_3d_seq_full_07_jpg, window.__resources.res_3d_seq_full_08_jpg, window.__resources.res_3d_seq_full_09_jpg, window.__resources.res_3d_seq_full_10_jpg, window.__resources.res_3d_seq_full_11_jpg, window.__resources.res_3d_seq_full_12_jpg, window.__resources.res_3d_seq_full_13_jpg, window.__resources.res_3d_seq_full_14_jpg, window.__resources.res_3d_seq_full_15_jpg, window.__resources.res_3d_seq_full_16_jpg, window.__resources.res_3d_seq_full_17_jpg, window.__resources.res_3d_seq_full_18_jpg, window.__resources.res_3d_seq_full_19_jpg, window.__resources.res_3d_seq_full_20_jpg, window.__resources.res_3d_seq_full_21_jpg, window.__resources.res_3d_seq_full_22_jpg, window.__resources.res_3d_seq_full_23_jpg, window.__resources.res_3d_seq_full_24_jpg],
-    digesters: [window.__resources.res_3d_seq_digesters_01_jpg, window.__resources.res_3d_seq_digesters_02_jpg, window.__resources.res_3d_seq_digesters_03_jpg, window.__resources.res_3d_seq_digesters_04_jpg, window.__resources.res_3d_seq_digesters_05_jpg, window.__resources.res_3d_seq_digesters_06_jpg, window.__resources.res_3d_seq_digesters_07_jpg, window.__resources.res_3d_seq_digesters_08_jpg, window.__resources.res_3d_seq_digesters_09_jpg, window.__resources.res_3d_seq_digesters_10_jpg, window.__resources.res_3d_seq_digesters_11_jpg, window.__resources.res_3d_seq_digesters_12_jpg, window.__resources.res_3d_seq_digesters_13_jpg, window.__resources.res_3d_seq_digesters_14_jpg, window.__resources.res_3d_seq_digesters_15_jpg, window.__resources.res_3d_seq_digesters_16_jpg, window.__resources.res_3d_seq_digesters_17_jpg, window.__resources.res_3d_seq_digesters_18_jpg, window.__resources.res_3d_seq_digesters_19_jpg, window.__resources.res_3d_seq_digesters_20_jpg, window.__resources.res_3d_seq_digesters_21_jpg, window.__resources.res_3d_seq_digesters_22_jpg, window.__resources.res_3d_seq_digesters_23_jpg, window.__resources.res_3d_seq_digesters_24_jpg],
-    chp: [window.__resources.res_3d_seq_chp_01_jpg, window.__resources.res_3d_seq_chp_02_jpg, window.__resources.res_3d_seq_chp_03_jpg, window.__resources.res_3d_seq_chp_04_jpg, window.__resources.res_3d_seq_chp_05_jpg, window.__resources.res_3d_seq_chp_06_jpg, window.__resources.res_3d_seq_chp_07_jpg, window.__resources.res_3d_seq_chp_08_jpg, window.__resources.res_3d_seq_chp_09_jpg, window.__resources.res_3d_seq_chp_10_jpg, window.__resources.res_3d_seq_chp_11_jpg, window.__resources.res_3d_seq_chp_12_jpg, window.__resources.res_3d_seq_chp_13_jpg, window.__resources.res_3d_seq_chp_14_jpg, window.__resources.res_3d_seq_chp_15_jpg, window.__resources.res_3d_seq_chp_16_jpg, window.__resources.res_3d_seq_chp_17_jpg, window.__resources.res_3d_seq_chp_18_jpg, window.__resources.res_3d_seq_chp_19_jpg, window.__resources.res_3d_seq_chp_20_jpg, window.__resources.res_3d_seq_chp_21_jpg, window.__resources.res_3d_seq_chp_22_jpg, window.__resources.res_3d_seq_chp_23_jpg, window.__resources.res_3d_seq_chp_24_jpg],
-    holder: [window.__resources.res_3d_seq_holder_01_jpg, window.__resources.res_3d_seq_holder_02_jpg, window.__resources.res_3d_seq_holder_03_jpg, window.__resources.res_3d_seq_holder_04_jpg, window.__resources.res_3d_seq_holder_05_jpg, window.__resources.res_3d_seq_holder_06_jpg, window.__resources.res_3d_seq_holder_07_jpg, window.__resources.res_3d_seq_holder_08_jpg, window.__resources.res_3d_seq_holder_09_jpg, window.__resources.res_3d_seq_holder_10_jpg, window.__resources.res_3d_seq_holder_11_jpg, window.__resources.res_3d_seq_holder_12_jpg, window.__resources.res_3d_seq_holder_13_jpg, window.__resources.res_3d_seq_holder_14_jpg, window.__resources.res_3d_seq_holder_15_jpg, window.__resources.res_3d_seq_holder_16_jpg, window.__resources.res_3d_seq_holder_17_jpg, window.__resources.res_3d_seq_holder_18_jpg, window.__resources.res_3d_seq_holder_19_jpg, window.__resources.res_3d_seq_holder_20_jpg, window.__resources.res_3d_seq_holder_21_jpg, window.__resources.res_3d_seq_holder_22_jpg, window.__resources.res_3d_seq_holder_23_jpg, window.__resources.res_3d_seq_holder_24_jpg],
-    co2: [window.__resources.res_3d_seq_co2_01_jpg, window.__resources.res_3d_seq_co2_02_jpg, window.__resources.res_3d_seq_co2_03_jpg, window.__resources.res_3d_seq_co2_04_jpg, window.__resources.res_3d_seq_co2_05_jpg, window.__resources.res_3d_seq_co2_06_jpg, window.__resources.res_3d_seq_co2_07_jpg, window.__resources.res_3d_seq_co2_08_jpg, window.__resources.res_3d_seq_co2_09_jpg, window.__resources.res_3d_seq_co2_10_jpg, window.__resources.res_3d_seq_co2_11_jpg, window.__resources.res_3d_seq_co2_12_jpg, window.__resources.res_3d_seq_co2_13_jpg, window.__resources.res_3d_seq_co2_14_jpg, window.__resources.res_3d_seq_co2_15_jpg, window.__resources.res_3d_seq_co2_16_jpg, window.__resources.res_3d_seq_co2_17_jpg, window.__resources.res_3d_seq_co2_18_jpg, window.__resources.res_3d_seq_co2_19_jpg, window.__resources.res_3d_seq_co2_20_jpg, window.__resources.res_3d_seq_co2_21_jpg, window.__resources.res_3d_seq_co2_22_jpg, window.__resources.res_3d_seq_co2_23_jpg, window.__resources.res_3d_seq_co2_24_jpg],
-    feedstock: [window.__resources.res_3d_seq_feedstock_01_jpg, window.__resources.res_3d_seq_feedstock_02_jpg, window.__resources.res_3d_seq_feedstock_03_jpg, window.__resources.res_3d_seq_feedstock_04_jpg, window.__resources.res_3d_seq_feedstock_05_jpg, window.__resources.res_3d_seq_feedstock_06_jpg, window.__resources.res_3d_seq_feedstock_07_jpg, window.__resources.res_3d_seq_feedstock_08_jpg, window.__resources.res_3d_seq_feedstock_09_jpg, window.__resources.res_3d_seq_feedstock_10_jpg, window.__resources.res_3d_seq_feedstock_11_jpg, window.__resources.res_3d_seq_feedstock_12_jpg, window.__resources.res_3d_seq_feedstock_13_jpg, window.__resources.res_3d_seq_feedstock_14_jpg, window.__resources.res_3d_seq_feedstock_15_jpg, window.__resources.res_3d_seq_feedstock_16_jpg, window.__resources.res_3d_seq_feedstock_17_jpg, window.__resources.res_3d_seq_feedstock_18_jpg, window.__resources.res_3d_seq_feedstock_19_jpg, window.__resources.res_3d_seq_feedstock_20_jpg, window.__resources.res_3d_seq_feedstock_21_jpg, window.__resources.res_3d_seq_feedstock_22_jpg, window.__resources.res_3d_seq_feedstock_23_jpg, window.__resources.res_3d_seq_feedstock_24_jpg],
+    full: ['assets/3d/seq/full/01.jpg', 'assets/3d/seq/full/02.jpg', 'assets/3d/seq/full/03.jpg', 'assets/3d/seq/full/04.jpg', 'assets/3d/seq/full/05.jpg', 'assets/3d/seq/full/06.jpg', 'assets/3d/seq/full/07.jpg', 'assets/3d/seq/full/08.jpg', 'assets/3d/seq/full/09.jpg', 'assets/3d/seq/full/10.jpg', 'assets/3d/seq/full/11.jpg', 'assets/3d/seq/full/12.jpg', 'assets/3d/seq/full/13.jpg', 'assets/3d/seq/full/14.jpg', 'assets/3d/seq/full/15.jpg', 'assets/3d/seq/full/16.jpg', 'assets/3d/seq/full/17.jpg', 'assets/3d/seq/full/18.jpg', 'assets/3d/seq/full/19.jpg', 'assets/3d/seq/full/20.jpg', 'assets/3d/seq/full/21.jpg', 'assets/3d/seq/full/22.jpg', 'assets/3d/seq/full/23.jpg', 'assets/3d/seq/full/24.jpg'],
+    digesters: ['assets/3d/seq/digesters/01.jpg', 'assets/3d/seq/digesters/02.jpg', 'assets/3d/seq/digesters/03.jpg', 'assets/3d/seq/digesters/04.jpg', 'assets/3d/seq/digesters/05.jpg', 'assets/3d/seq/digesters/06.jpg', 'assets/3d/seq/digesters/07.jpg', 'assets/3d/seq/digesters/08.jpg', 'assets/3d/seq/digesters/09.jpg', 'assets/3d/seq/digesters/10.jpg', 'assets/3d/seq/digesters/11.jpg', 'assets/3d/seq/digesters/12.jpg', 'assets/3d/seq/digesters/13.jpg', 'assets/3d/seq/digesters/14.jpg', 'assets/3d/seq/digesters/15.jpg', 'assets/3d/seq/digesters/16.jpg', 'assets/3d/seq/digesters/17.jpg', 'assets/3d/seq/digesters/18.jpg', 'assets/3d/seq/digesters/19.jpg', 'assets/3d/seq/digesters/20.jpg', 'assets/3d/seq/digesters/21.jpg', 'assets/3d/seq/digesters/22.jpg', 'assets/3d/seq/digesters/23.jpg', 'assets/3d/seq/digesters/24.jpg'],
+    chp: ['assets/3d/seq/chp/01.jpg', 'assets/3d/seq/chp/02.jpg', 'assets/3d/seq/chp/03.jpg', 'assets/3d/seq/chp/04.jpg', 'assets/3d/seq/chp/05.jpg', 'assets/3d/seq/chp/06.jpg', 'assets/3d/seq/chp/07.jpg', 'assets/3d/seq/chp/08.jpg', 'assets/3d/seq/chp/09.jpg', 'assets/3d/seq/chp/10.jpg', 'assets/3d/seq/chp/11.jpg', 'assets/3d/seq/chp/12.jpg', 'assets/3d/seq/chp/13.jpg', 'assets/3d/seq/chp/14.jpg', 'assets/3d/seq/chp/15.jpg', 'assets/3d/seq/chp/16.jpg', 'assets/3d/seq/chp/17.jpg', 'assets/3d/seq/chp/18.jpg', 'assets/3d/seq/chp/19.jpg', 'assets/3d/seq/chp/20.jpg', 'assets/3d/seq/chp/21.jpg', 'assets/3d/seq/chp/22.jpg', 'assets/3d/seq/chp/23.jpg', 'assets/3d/seq/chp/24.jpg'],
+    holder: ['assets/3d/seq/holder/01.jpg', 'assets/3d/seq/holder/02.jpg', 'assets/3d/seq/holder/03.jpg', 'assets/3d/seq/holder/04.jpg', 'assets/3d/seq/holder/05.jpg', 'assets/3d/seq/holder/06.jpg', 'assets/3d/seq/holder/07.jpg', 'assets/3d/seq/holder/08.jpg', 'assets/3d/seq/holder/09.jpg', 'assets/3d/seq/holder/10.jpg', 'assets/3d/seq/holder/11.jpg', 'assets/3d/seq/holder/12.jpg', 'assets/3d/seq/holder/13.jpg', 'assets/3d/seq/holder/14.jpg', 'assets/3d/seq/holder/15.jpg', 'assets/3d/seq/holder/16.jpg', 'assets/3d/seq/holder/17.jpg', 'assets/3d/seq/holder/18.jpg', 'assets/3d/seq/holder/19.jpg', 'assets/3d/seq/holder/20.jpg', 'assets/3d/seq/holder/21.jpg', 'assets/3d/seq/holder/22.jpg', 'assets/3d/seq/holder/23.jpg', 'assets/3d/seq/holder/24.jpg'],
+    co2: ['assets/3d/seq/co2/01.jpg', 'assets/3d/seq/co2/02.jpg', 'assets/3d/seq/co2/03.jpg', 'assets/3d/seq/co2/04.jpg', 'assets/3d/seq/co2/05.jpg', 'assets/3d/seq/co2/06.jpg', 'assets/3d/seq/co2/07.jpg', 'assets/3d/seq/co2/08.jpg', 'assets/3d/seq/co2/09.jpg', 'assets/3d/seq/co2/10.jpg', 'assets/3d/seq/co2/11.jpg', 'assets/3d/seq/co2/12.jpg', 'assets/3d/seq/co2/13.jpg', 'assets/3d/seq/co2/14.jpg', 'assets/3d/seq/co2/15.jpg', 'assets/3d/seq/co2/16.jpg', 'assets/3d/seq/co2/17.jpg', 'assets/3d/seq/co2/18.jpg', 'assets/3d/seq/co2/19.jpg', 'assets/3d/seq/co2/20.jpg', 'assets/3d/seq/co2/21.jpg', 'assets/3d/seq/co2/22.jpg', 'assets/3d/seq/co2/23.jpg', 'assets/3d/seq/co2/24.jpg'],
+    feedstock: ['assets/3d/seq/feedstock/01.jpg', 'assets/3d/seq/feedstock/02.jpg', 'assets/3d/seq/feedstock/03.jpg', 'assets/3d/seq/feedstock/04.jpg', 'assets/3d/seq/feedstock/05.jpg', 'assets/3d/seq/feedstock/06.jpg', 'assets/3d/seq/feedstock/07.jpg', 'assets/3d/seq/feedstock/08.jpg', 'assets/3d/seq/feedstock/09.jpg', 'assets/3d/seq/feedstock/10.jpg', 'assets/3d/seq/feedstock/11.jpg', 'assets/3d/seq/feedstock/12.jpg', 'assets/3d/seq/feedstock/13.jpg', 'assets/3d/seq/feedstock/14.jpg', 'assets/3d/seq/feedstock/15.jpg', 'assets/3d/seq/feedstock/16.jpg', 'assets/3d/seq/feedstock/17.jpg', 'assets/3d/seq/feedstock/18.jpg', 'assets/3d/seq/feedstock/19.jpg', 'assets/3d/seq/feedstock/20.jpg', 'assets/3d/seq/feedstock/21.jpg', 'assets/3d/seq/feedstock/22.jpg', 'assets/3d/seq/feedstock/23.jpg', 'assets/3d/seq/feedstock/24.jpg'],
   };
   function SeqImg({ frames, progress }) {
     const n = frames.length;
     const idx = Math.max(0, Math.min(n - 1, Math.floor(progress * n)));
     // Render ONLY the active frame (single <img> with src swap) rather than
-    // mounting all N frames and opacity-toggling — keeps the serialized DOM
-    // light so the frame-by-frame video exporter doesn't time out.
+    // mounting all N frames and opacity-toggling. Keeps the serialized DOM
+    // light so the frame-by-frame video exporter doesn't time out, and removes
+    // the between-frame opacity flash. Frames are already decoded/cached, so
+    // swapping src is instant during both playback and export.
     return (
       <div style={{ position: 'absolute', inset: 0, background: INK }}>
         <img src={frames[idx]} alt="" style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover' }} />
@@ -2214,72 +1369,14 @@ Object.assign(window, {
   }
 
   // ── True-3D site flythrough (baked from the FWF Plant 3D Model over real
-  //    satellite imagery) — regional approach → descend → push through the
-  //    plant → follow the pipeline corridor. Replaces the old CAD image-zoom.
-  const FLYTHROUGH_FRAMES = [
-    window.__resources.res_3d_seq_flythrough_01_f_jpg, window.__resources.res_3d_seq_flythrough_02_f_jpg, window.__resources.res_3d_seq_flythrough_03_f_jpg, window.__resources.res_3d_seq_flythrough_04_f_jpg, window.__resources.res_3d_seq_flythrough_05_f_jpg, window.__resources.res_3d_seq_flythrough_06_f_jpg,
-    window.__resources.res_3d_seq_flythrough_07_f_jpg, window.__resources.res_3d_seq_flythrough_08_f_jpg, window.__resources.res_3d_seq_flythrough_09_f_jpg, window.__resources.res_3d_seq_flythrough_10_f_jpg, window.__resources.res_3d_seq_flythrough_11_f_jpg, window.__resources.res_3d_seq_flythrough_12_f_jpg,
-    window.__resources.res_3d_seq_flythrough_13_f_jpg, window.__resources.res_3d_seq_flythrough_14_f_jpg, window.__resources.res_3d_seq_flythrough_15_f_jpg, window.__resources.res_3d_seq_flythrough_16_f_jpg, window.__resources.res_3d_seq_flythrough_17_f_jpg, window.__resources.res_3d_seq_flythrough_18_f_jpg,
-    window.__resources.res_3d_seq_flythrough_19_f_jpg, window.__resources.res_3d_seq_flythrough_20_f_jpg, window.__resources.res_3d_seq_flythrough_21_f_jpg, window.__resources.res_3d_seq_flythrough_22_f_jpg, window.__resources.res_3d_seq_flythrough_23_f_jpg, window.__resources.res_3d_seq_flythrough_24_f_jpg,
-    window.__resources.res_3d_seq_flythrough_25_f_jpg, window.__resources.res_3d_seq_flythrough_26_f_jpg, window.__resources.res_3d_seq_flythrough_27_f_jpg, window.__resources.res_3d_seq_flythrough_28_f_jpg, window.__resources.res_3d_seq_flythrough_29_f_jpg, window.__resources.res_3d_seq_flythrough_30_f_jpg,
-    window.__resources.res_3d_seq_flythrough_31_f_jpg, window.__resources.res_3d_seq_flythrough_32_f_jpg, window.__resources.res_3d_seq_flythrough_33_f_jpg, window.__resources.res_3d_seq_flythrough_34_f_jpg, window.__resources.res_3d_seq_flythrough_35_f_jpg, window.__resources.res_3d_seq_flythrough_36_f_jpg,
-    window.__resources.res_3d_seq_flythrough_37_f_jpg, window.__resources.res_3d_seq_flythrough_38_f_jpg, window.__resources.res_3d_seq_flythrough_39_f_jpg, window.__resources.res_3d_seq_flythrough_40_f_jpg, window.__resources.res_3d_seq_flythrough_41_f_jpg, window.__resources.res_3d_seq_flythrough_42_f_jpg,
-    window.__resources.res_3d_seq_flythrough_43_f_jpg, window.__resources.res_3d_seq_flythrough_44_f_jpg, window.__resources.res_3d_seq_flythrough_45_f_jpg, window.__resources.res_3d_seq_flythrough_46_f_jpg, window.__resources.res_3d_seq_flythrough_47_f_jpg, window.__resources.res_3d_seq_flythrough_48_f_jpg,
-    window.__resources.res_3d_seq_flythrough_49_f_jpg, window.__resources.res_3d_seq_flythrough_50_f_jpg, window.__resources.res_3d_seq_flythrough_51_f_jpg, window.__resources.res_3d_seq_flythrough_52_f_jpg, window.__resources.res_3d_seq_flythrough_53_f_jpg, window.__resources.res_3d_seq_flythrough_54_f_jpg,
-    window.__resources.res_3d_seq_flythrough_55_f_jpg, window.__resources.res_3d_seq_flythrough_56_f_jpg, window.__resources.res_3d_seq_flythrough_57_f_jpg, window.__resources.res_3d_seq_flythrough_58_f_jpg, window.__resources.res_3d_seq_flythrough_59_f_jpg, window.__resources.res_3d_seq_flythrough_60_f_jpg,
-    window.__resources.res_3d_seq_flythrough_61_f_jpg, window.__resources.res_3d_seq_flythrough_62_f_jpg, window.__resources.res_3d_seq_flythrough_63_f_jpg, window.__resources.res_3d_seq_flythrough_64_f_jpg,
-  ];
-  const FLY_SEGMENTS = [
-    { t: 0.00, label: 'Regional Approach',            sub: 'The existing municipal site \u2014 between estuary and ocean' },
-    { t: 0.22, label: 'Fishwater Flats WWTW',         sub: 'Phase 2 & 3 built on the existing works footprint' },
-    { t: 0.48, label: 'Through the Plant',            sub: '3\u00d7 Triton digesters \u00b7 CHP hall \u00b7 gas holder \u00b7 upgrading & CO\u2082' },
-    { t: 0.82, label: 'Toward the Pipeline Corridor', sub: '7.7 km biomethane route to secured industrial demand' },
-  ];
-  function FlyThroughScene({ start, end }) {
-    return (
-      <Sprite start={start} end={end} label="3D site flythrough">
-        <FlyThroughInner />
-      </Sprite>
-    );
-  }
-  function FlyThroughInner() {
-    const { localTime, duration } = useSprite();
-    const progress = duration ? Math.min(1, Math.max(0, localTime / duration)) : 0;
-    let idx = 0;
-    for (let i = 0; i < FLY_SEGMENTS.length; i++) if (progress >= FLY_SEGMENTS[i].t) idx = i;
-    const seg = FLY_SEGMENTS[idx];
-    const segStart = seg.t;
-    const segEnd = FLY_SEGMENTS[idx + 1] ? FLY_SEGMENTS[idx + 1].t : 1.0001;
-    const localSeg = (progress - segStart) / (segEnd - segStart);
-    let labelOpacity = 1;
-    if (localSeg < 0.14) labelOpacity = localSeg / 0.14;
-    else if (localSeg > 0.86) labelOpacity = Math.max(0, (1 - localSeg) / 0.14);
-    const entryFade = Math.min(1, localTime / 0.5);
-    const exitFade = Math.min(1, Math.max(0, (duration - localTime) / 0.5));
-    const boxOpacity = Math.min(entryFade, exitFade);
-    return (
-      <div style={{ position: 'absolute', inset: 0, overflow: 'hidden', opacity: boxOpacity, background: INK }}>
-        <SeqImg frames={FLYTHROUGH_FRAMES} progress={progress} />
-        <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(3,7,11,0.62) 0%, rgba(3,7,11,0.12) 40%, rgba(3,7,11,0.55) 72%, rgba(3,7,11,0.9) 100%)' }} />
-        <div style={{ position: 'absolute', left: 60, top: 48, fontFamily: FH, fontSize: 20, fontWeight: 700, letterSpacing: 4, color: BLUE, textTransform: 'uppercase' }}>
-          Phase 2/3 Plant Layout &middot; 3D Site Flythrough
-        </div>
-        <div style={{ position: 'absolute', left: 60, top: 78, fontFamily: FB, fontSize: 14, color: TXT_DIM }}>
-          Real satellite imagery &middot; every structure placed from the engineering drawings
-        </div>
-        <StatusBadge kind="PROPOSED" />
-        <div style={{ position: 'absolute', left: 60, right: 60, bottom: 66, height: 2, background: 'rgba(143,224,255,0.18)' }}>
-          <div style={{ height: '100%', width: `${progress * 100}%`, background: BLUE }} />
-        </div>
-        <div style={{ position: 'absolute', left: 0, right: 0, bottom: 92, textAlign: 'center', opacity: labelOpacity, transition: 'opacity 0.2s' }}>
-          <div style={{ fontFamily: FH, fontSize: 40, fontWeight: 700, color: TXT_HI, letterSpacing: 0.4 }}>{seg.label}</div>
-          <div style={{ fontFamily: FB, fontSize: 19, color: TXT_SUB, marginTop: 6 }}>{seg.sub}</div>
-        </div>
-      </div>
-    );
-  }
+  //    satellite imagery) — a one-way camera move: regional approach →
+  //    descend from sky → push through the plant → follow the pipeline corridor.
+  //    Replaces the old CAD image-zoom SiteDiagram. 64 frames played forward.
+  // FlyThroughScene — GES fly-in alias (FWF.esp + FWF Fly in .esp camera paths)
+  function FlyThroughScene({ start, end }) { return <GESFlyInScene start={start} end={end} />; }
 
-  function ModelShot({ start, end, src, loc, cap, stat, status = 'PROPOSED', seq, site = window.__resources.res_maps_gmaps_site_overview_png }) {
+
+  function ModelShot({ start, end, src, loc, cap, stat, status = 'PROPOSED', seq, site = 'assets/maps/fwf_site_layout.png' }) {
     useEdit();
     const bid = mkBid(start, end);
     loc = EditStore.label(bid, 'Location', loc);
@@ -2424,7 +1521,7 @@ Object.assign(window, {
     return (
       <Sprite start={start} end={end} label="Closing aerial">
         <div style={{ position: 'absolute', inset: 0, overflow: 'hidden' }}>
-          <VideoSlot id="closing-aerial" label="Closing aerial" stock={window.__resources.res_footage_sm_closing_aerial_mp4} start={0} end={Math.max(0.5, end - start)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.72) saturate(1.03)' }} />
+          <VideoSlot id="closing-aerial" label="Closing aerial" stock="assets/footage/sm/closing_aerial.mp4" start={0} end={Math.max(0.5, end - start)} style={{ position: 'absolute', inset: 0, width: '100%', height: '100%', objectFit: 'cover', filter: 'brightness(0.72) saturate(1.03)' }} />
         </div>
         <FadeBox x={0} y={0} width={W} height={H} entryDur={0.6} exitDur={0.7}>
           <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(180deg, rgba(3,7,11,0.15) 0%, rgba(3,7,11,0.35) 55%, rgba(3,7,11,0.85) 100%)' }} />
@@ -2454,13 +1551,13 @@ Object.assign(window, {
           <div style={{ position: 'absolute', inset: 0, background: INK, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 34 }}>
             <div style={{ display: 'flex', alignItems: 'flex-end', gap: 40 }}>
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6 }}>
-                <img src={window.__resources.res_Straits_Energy_Holdings_png} style={{ height: 140 }} />
+                <img src="assets/Straits_Energy_Holdings.png" style={{ height: 140 }} />
                 <div style={{ fontFamily: FH, fontSize: 12, fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase', color: TXT_SUB }}>Project Owner</div>
                 <div style={{ fontFamily: FH, fontSize: 12, fontWeight: 600, letterSpacing: 2, textTransform: 'uppercase', color: BLUE }}>Powered by EnergiDrop</div>
               </div>
               <div style={{ width: 2, height: 54, background: BORDER }} />
               <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8 }}>
-                <img src={window.__resources.res_EnergiDrop_Logo_Transparent_png} style={{ height: 74 }} />
+                <img src="assets/EnergiDrop_Logo_Transparent.png" style={{ height: 74 }} />
                 <div style={{ fontFamily: FH, fontSize: 12, fontWeight: 700, letterSpacing: 2.5, textTransform: 'uppercase', color: BLUE }}>Power &amp; Project Management</div>
               </div>
             </div>
@@ -2858,20 +1955,20 @@ Object.assign(window, {
         <Narrator />
         <SubtitleTrack />
         <TitleCard start={0} end={5} />
-        <MapShot start={5} end={15} src={window.__resources.res_maps_gmaps_metro_wide_png} loc="Aerial Approach · Fishwater Flats WWTW" fx={0.6} fy={0.62} toZoom={1.28} cap="Gqeberha — Where the Coast Meets Capacity" stat="Real satellite view · WWTW outfall + coastline in frame" />
+        <MapShot start={5} end={15} src="assets/maps/gmaps_metro_wide.png" loc="Aerial Approach · Fishwater Flats WWTW" fx={0.6} fy={0.62} toZoom={1.28} cap="Gqeberha — Where the Coast Meets Capacity" stat="Real satellite view · WWTW outfall + coastline in frame" />
         <OpeningStatement start={5} end={15} problem="Fishwater Flats treats most of Gqeberha’s wastewater — and after decades of service, its sludge now strains the plant, the estuary and the coastline." action="Straits Energy is building an integrated biogas facility on the existing municipal site — converting that waste into clean energy, food-grade CO₂, fertiliser and recovered water." />
         <OutfallScene start={15} end={23} />
         <QuoteCard start={23} end={35} name="NMBM Official" role="Nelson Mandela Bay Municipality · Water & Sanitation"
           setting="Outdoor — WWTW perimeter, treatment infrastructure behind"
           quote="This plant carries the bay every single day. As the city has grown, so has the volume of sludge we have to manage responsibly — and that's exactly the challenge this project was built to meet." />
-        <StatCard start={35} end={37.7} big="~155 ML/day" small="Wastewater received at Fishwater Flats WWTW (subject to confirmation)" bg={window.__resources.res_statbg_water_jpg} />
-        <StatCard start={37.7} end={40.3} big="~74 t/day" small="Dry sludge solids to be responsibly managed" bg={window.__resources.res_statbg_solids_jpg} />
-        <StatCard start={40.3} end={43} big="Since 1976" small="Original plant infrastructure — capacity needs have evolved" bg={window.__resources.res_statbg_site_jpg} />
-        <MapShot start={43} end={46} src={window.__resources.res_maps_gmaps_eastern_cape_regional_png} loc="Eastern Cape · Nelson Mandela Bay" cap="Gqeberha — 1.2 million people" stat="Chronic infrastructure strain at the metro's edge" />
-        <MapShot start={46} end={49} src={window.__resources.res_maps_gmaps_metro_wide_png} loc="Gqeberha Metro" cap="Fishwater Flats WWTW" stat="Existing municipal site · Google Maps satellite" />
+        <StatCard start={35} end={37.7} big="~155 ML/day" small="Wastewater received at Fishwater Flats WWTW (subject to confirmation)" bg="assets/statbg_water.jpg" />
+        <StatCard start={37.7} end={40.3} big="~74 t/day" small="Dry sludge solids to be responsibly managed" bg="assets/statbg_solids.jpg" />
+        <StatCard start={40.3} end={43} big="Since 1976" small="Original plant infrastructure — capacity needs have evolved" bg="assets/statbg_site.jpg" />
+        <MapShot start={43} end={46} src="assets/maps/gmaps_eastern_cape_regional.png" loc="Eastern Cape · Nelson Mandela Bay" cap="Gqeberha — 1.2 million people" stat="Chronic infrastructure strain at the metro's edge" />
+        <MapShot start={46} end={49} src="assets/maps/gmaps_metro_wide.png" loc="Gqeberha Metro" cap="Fishwater Flats WWTW" stat="Existing municipal site · Google Maps satellite" />
 
         <PlantFootprintOverlay start={49} end={57} />
-        <MapShot start={49} end={57} src={window.__resources.res_maps_gmaps_site_overview_png} loc="Fishwater Flats WWTW · Site Overview" cap="One site — turned into a multi-revenue green infrastructure asset" stat="WWTW boundary · proposed plant footprint · satellite-verified" />
+        <MapShot start={49} end={57} src="assets/maps/gmaps_site_overview.png" loc="Fishwater Flats WWTW · Site Overview" cap="One site — turned into a multi-revenue green infrastructure asset" stat="WWTW boundary · proposed plant footprint · satellite-verified" />
         <BlockFlowScene base={57} />
         <CHPScene start={77} end={84} />
         <QuoteCard start={84} end={98} name="Straits Energy — Engineering" role="Transactional Engineering Advisor · Straits Energy Holdings"
@@ -2883,23 +1980,23 @@ Object.assign(window, {
           setting="Indoor — office, warm light"
           quote="This is not a single-product energy project. This is an integrated infrastructure solution — every waste stream creates a revenue stream, and every revenue stream strengthens the investment case." />
 
-<ModelShot start={162} end={170} src={window.__resources.res_3d_07_3d_png} loc="Proof of Concept" cap="Phase 1 Pilot — Operational" stat="50 kWe exported to NMBM LV grid — live today, not a render" status="COMPLETED" />
-        <ChapterTitle num="05" title="Why This Project Can Happen" start={162} />        <MapShot start={170} end={177} src={window.__resources.res_maps_gmaps_site_close_orbital_png} loc="Fishwater Flats WWTW — Close Orbital" cap="The land is there. The feedstock is there." stat="Real satellite view · WWTW boundary, plant footprint and pipelines mapped in" />
-        <MapShot start={177} end={181} src={window.__resources.res_maps_gmaps_site_overview_png} loc="Fishwater Flats WWTW · Gqeberha" cap="The Existing Municipal Site" stat="Where Phases 2 & 3 will be built · Google Maps satellite" status="EXISTING" fx={0.66} fy={0.78} toZoom={1.5} />
-        <MapShot start={181} end={185} src={window.__resources.res_maps_gmaps_flythrough_base_png} loc="Between the Estuary & the Indian Ocean" cap="On the Nelson Mandela Bay Coast" stat="Existing WWTW footprint · real satellite imagery" status="EXISTING" fx={0.6} fy={0.58} toZoom={1.5} />
+<ModelShot start={162} end={170} src="assets/3d/07-3d.png" loc="Proof of Concept" cap="Phase 1 Pilot — Operational" stat="50 kWe exported to NMBM LV grid — live today, not a render" status="COMPLETED" />
+        <ChapterTitle num="05" title="Why This Project Can Happen" start={162} />        <MapShot start={170} end={177} src="assets/maps/gmaps_site_close_orbital.png" loc="Fishwater Flats WWTW — Close Orbital" cap="The land is there. The feedstock is there." stat="Real satellite view · WWTW boundary, plant footprint and pipelines mapped in" />
+        <MapShot start={177} end={181} src="assets/maps/gmaps_site_overview.png" loc="Fishwater Flats WWTW · Gqeberha" cap="The Existing Municipal Site" stat="Where Phases 2 & 3 will be built · Google Maps satellite" status="EXISTING" fx={0.66} fy={0.78} toZoom={1.5} />
+        <MapShot start={181} end={185} src="assets/maps/fwf_site_layout.png" loc="Between the Estuary & the Indian Ocean" cap="On the Nelson Mandela Bay Coast" stat="Existing WWTW footprint · real satellite imagery" status="EXISTING" fx={0.6} fy={0.58} toZoom={1.5} />
         <FlyThroughScene start={185} end={195} />
-        <ModelShot start={195} end={200} src={window.__resources.res_3d_plant_3d_png} seq="full" loc="Interactive 3D Model · Full Plant" cap="3D Preliminary Plant Model" stat="3× Triton digesters · CHP complex · gas holder dome — downloadable 3D model" />
-        <ModelShot start={200} end={205} src={window.__resources.res_3d_02_3d_png} seq="digesters" loc="NE Elevation · Triton Digester Row" cap="Three Triton Digesters — The Process Core" stat="3× high-solids CSTR · mesophilic · ~21-day HRT · target >95% availability" />
-        <ModelShot start={205} end={210} src={window.__resources.res_3d_04_3d_png} seq="chp" loc="CHP + Transformer Block" cap="2 MWe → 5 MWe Embedded Generation" stat="6× CHP modules · embedded into WWTW 22kV ring main" />
-        <ModelShot start={210} end={215} src={window.__resources.res_3d_05_3d_png} seq="holder" loc="Gas Holder Dome + BGU" cap="Biogas Storage & Upgrading" stat="CO₂ offtake — term sheet, in finalisation · CNG + 7.7 km pipeline (in development)" status="DEVELOPMENT" />
-        <ModelShot start={215} end={220} src={window.__resources.res_3d_06_3d_png} seq="co2" loc="Cryogenic CO₂ Vessel · Close-Up" cap="Food-Grade Liquid CO₂" stat="~30 tpd · food/beverage-grade · cryogenic liquefaction" status="FINALISATION" />
-        <ModelShot start={220} end={225} src={window.__resources.res_3d_09_3d_png} seq="feedstock" loc="Feedstock Receiving Zone" cap="Co-Digestion Intake" stat="Live bottom bins · FOG tank · blending tanks — gate-fee revenue" />
+        <ModelShot start={195} end={200} src="assets/3d/plant_3d_pdf.jpg" seq="full" loc="Interactive 3D Model · Full Plant" cap="3D Preliminary Plant Model" stat="3× Triton digesters · CHP complex · gas holder dome — downloadable 3D model" />
+        <ModelShot start={200} end={205} src="assets/3d/02-3d.png" seq="digesters" loc="NE Elevation · Triton Digester Row" cap="Three Triton Digesters — The Process Core" stat="3× high-solids CSTR · mesophilic · ~21-day HRT · target >95% availability" />
+        <ModelShot start={205} end={210} src="assets/3d/04-3d.png" seq="chp" loc="CHP + Transformer Block" cap="2 MWe → 5 MWe Embedded Generation" stat="6× CHP modules · embedded into WWTW 22kV ring main" />
+        <ModelShot start={210} end={215} src="assets/3d/05-3d.png" seq="holder" loc="Gas Holder Dome + BGU" cap="Biogas Storage & Upgrading" stat="CO₂ offtake — term sheet, in finalisation · CNG + 7.7 km pipeline (in development)" status="DEVELOPMENT" />
+        <ModelShot start={215} end={220} src="assets/3d/06-3d.png" seq="co2" loc="Cryogenic CO₂ Vessel · Close-Up" cap="Food-Grade Liquid CO₂" stat="~30 tpd · food/beverage-grade · cryogenic liquefaction" status="FINALISATION" />
+        <ModelShot start={220} end={225} src="assets/3d/09-3d.png" seq="feedstock" loc="Feedstock Receiving Zone" cap="Co-Digestion Intake" stat="Live bottom bins · FOG tank · blending tanks — gate-fee revenue" />
         <QuoteCard start={225} end={241} name="EPC Technology Partner" role="Anaerobic Digestion Technology Provider (to be named on disclosure)"
           setting="Indoor — commissioning / plant-floor setting"
           quote="This is a proven co-digestion platform. What's being done at Fishwater Flats is deploying that proven technology where the environmental need — and the commercial case — are both exceptionally strong." />
         <CNGScene start={241} end={247} />
         <CO2Scene start={247} end={251} />
-        <MapShot start={251} end={256} src={window.__resources.res_maps_gmaps_pipeline_corridor_coast_png} loc="Biomethane Pipeline Corridor" cap="7.7 km anchor pipeline route" stat="Dedicated route to nearby industry · in development" />
+        <MapShot start={251} end={256} src="assets/maps/gmaps_pipeline_corridor_coast.png" loc="Biomethane Pipeline Corridor" cap="7.7 km anchor pipeline route" stat="Dedicated route to nearby industry · in development" />
         <ClosingAerial start={256} end={267} />
 
         {/* SECTION 5 — Call to Action */}
@@ -2953,19 +2050,19 @@ Object.assign(window, {
         <TitleCard start={0} end={5} />
 
         {/* CH.01 — The place and the problem */}
-        <MapShot start={5} end={13} src={window.__resources.res_maps_gmaps_metro_wide_png} loc="Aerial Approach · Fishwater Flats WWTW" fx={0.6} fy={0.62} toZoom={1.28} cap="Gqeberha — Where the Coast Meets Capacity" stat="Real satellite view · WWTW outfall + coastline in frame" />
+        <MapShot start={5} end={13} src="assets/maps/gmaps_metro_wide.png" loc="Aerial Approach · Fishwater Flats WWTW" fx={0.6} fy={0.62} toZoom={1.28} cap="Gqeberha — Where the Coast Meets Capacity" stat="Real satellite view · WWTW outfall + coastline in frame" />
         <OpeningStatement start={5} end={13} problem="Fishwater Flats treats most of Gqeberha’s wastewater — and after decades of service, its sludge now strains the plant, the estuary and the coastline." action="Straits Energy is building an integrated biogas facility on the existing municipal site — managing that waste responsibly and recovering clean energy, water and nutrients." />
         <OutfallScene start={13} end={21} />
         <QuoteCard start={21} end={31} name="NMBM Official" role="Nelson Mandela Bay Municipality · Water & Sanitation"
           setting="Outdoor — WWTW perimeter, treatment infrastructure behind"
           quote="This plant carries the bay every single day. As the city has grown, so has the volume of sludge we have to manage responsibly — and that's exactly the challenge this project was built to meet." />
-        <StatCard start={31} end={34} big="~155 ML/day" small="Wastewater received at Fishwater Flats WWTW (subject to confirmation)" bg={window.__resources.res_statbg_water_jpg} />
-        <StatCard start={34} end={37} big="~74 t/day" small="Dry sludge solids to be responsibly managed" bg={window.__resources.res_statbg_solids_jpg} />
-        <StatCard start={37} end={40} big="Since 1976" small="Original plant infrastructure — capacity needs have evolved" bg={window.__resources.res_statbg_site_jpg} />
+        <StatCard start={31} end={34} big="~155 ML/day" small="Wastewater received at Fishwater Flats WWTW (subject to confirmation)" bg="assets/statbg_water.jpg" />
+        <StatCard start={34} end={37} big="~74 t/day" small="Dry sludge solids to be responsibly managed" bg="assets/statbg_solids.jpg" />
+        <StatCard start={37} end={40} big="Since 1976" small="Original plant infrastructure — capacity needs have evolved" bg="assets/statbg_site.jpg" />
 
         {/* CH.02 — The solution, on the existing site */}
         <PlantFootprintOverlay start={40} end={49} />
-        <MapShot start={40} end={49} src={window.__resources.res_maps_gmaps_site_overview_png} loc="Fishwater Flats WWTW · Site Overview" cap="Built on the existing municipal footprint — no new land take" stat="WWTW boundary · proposed plant footprint · satellite-verified" />
+        <MapShot start={40} end={49} src="assets/maps/gmaps_site_overview.png" loc="Fishwater Flats WWTW · Site Overview" cap="Built on the existing municipal footprint — no new land take" stat="WWTW boundary · proposed plant footprint · satellite-verified" />
 
         {/* CH.03 — How the system works */}
         <BlockFlowScene base={49} />
@@ -2983,12 +2080,12 @@ Object.assign(window, {
         <BenefitCard start={112} end={117} item={B.people}   tone={SKY} />
 
         {/* CH.05 — Why this can happen (proven, engineered, safe) */}
-        <ModelShot start={117} end={124} src={window.__resources.res_3d_07_3d_png} loc="Proof of Concept" cap="Phase 1 Pilot — Operational" stat="50 kWe exported to NMBM LV grid — live today, not a render" status="COMPLETED" />
-        <MapShot start={124} end={128} src={window.__resources.res_maps_gmaps_site_overview_png} loc="Fishwater Flats WWTW · Gqeberha" cap="The Existing Municipal Site" stat="Where Phases 2 & 3 will be built · Google Maps satellite" status="EXISTING" fx={0.66} fy={0.78} toZoom={1.5} />
+        <ModelShot start={117} end={124} src="assets/3d/07-3d.png" loc="Proof of Concept" cap="Phase 1 Pilot — Operational" stat="50 kWe exported to NMBM LV grid — live today, not a render" status="COMPLETED" />
+        <MapShot start={124} end={128} src="assets/maps/gmaps_site_overview.png" loc="Fishwater Flats WWTW · Gqeberha" cap="The Existing Municipal Site" stat="Where Phases 2 & 3 will be built · Google Maps satellite" status="EXISTING" fx={0.66} fy={0.78} toZoom={1.5} />
         <FlyThroughScene start={128} end={138} />
-        <ModelShot start={138} end={144} src={window.__resources.res_3d_plant_3d_png} seq="full" loc="Interactive 3D Model · Full Plant" cap="3D Preliminary Plant Model" stat="3× high-solids CSTR · mesophilic · ~21-day HRT · target >95% availability" />
-        <ModelShot start={144} end={150} src={window.__resources.res_3d_04_3d_png} seq="chp" loc="CHP + Transformer Block" cap="2 MWe → 5 MWe Embedded Generation" stat="6× CHP modules · embedded into WWTW 22kV ring main" />
-        <ModelShot start={150} end={156} src={window.__resources.res_3d_05_3d_png} seq="holder" loc="Gas Holder Dome + BGU" cap="Enclosed Gas Handling & Upgrading" stat="Gas-handling, storage & WWTW-interface safety engineered in · in development" status="DEVELOPMENT" />
+        <ModelShot start={138} end={144} src="assets/3d/plant_3d_pdf.jpg" seq="full" loc="Interactive 3D Model · Full Plant" cap="3D Preliminary Plant Model" stat="3× high-solids CSTR · mesophilic · ~21-day HRT · target >95% availability" />
+        <ModelShot start={144} end={150} src="assets/3d/04-3d.png" seq="chp" loc="CHP + Transformer Block" cap="2 MWe → 5 MWe Embedded Generation" stat="6× CHP modules · embedded into WWTW 22kV ring main" />
+        <ModelShot start={150} end={156} src="assets/3d/05-3d.png" seq="holder" loc="Gas Holder Dome + BGU" cap="Enclosed Gas Handling & Upgrading" stat="Gas-handling, storage & WWTW-interface safety engineered in · in development" status="DEVELOPMENT" />
         <QuoteCard start={156} end={166} name="EPC Technology Partner" role="Anaerobic Digestion Technology Provider (to be named on disclosure)"
           setting="Indoor — commissioning / plant-floor setting"
           quote="This is a proven co-digestion platform. What's being done at Fishwater Flats is deploying that proven technology where the environmental need is exceptionally strong." />
@@ -3046,18 +2143,18 @@ Object.assign(window, {
         <TitleCard start={0} end={5} />
 
         {/* CH.01 — The opportunity */}
-        <MapShot start={5} end={13} src={window.__resources.res_maps_gmaps_metro_wide_png} loc="Aerial Approach · Fishwater Flats WWTW" fx={0.6} fy={0.62} toZoom={1.28} cap="Gqeberha — A Secured-Feedstock Infrastructure Asset" stat="Real satellite view · WWTW outfall + coastline in frame" />
+        <MapShot start={5} end={13} src="assets/maps/gmaps_metro_wide.png" loc="Aerial Approach · Fishwater Flats WWTW" fx={0.6} fy={0.62} toZoom={1.28} cap="Gqeberha — A Secured-Feedstock Infrastructure Asset" stat="Real satellite view · WWTW outfall + coastline in frame" />
         <OpeningStatement start={5} end={13} problem="Fishwater Flats treats most of Gqeberha’s wastewater — decades of sludge and organic waste that must be managed, at scale, every day." action="Straits Energy is building an integrated biogas facility on the existing site — turning every waste stream into a revenue stream." />
         <QuoteCard start={13} end={23} name="Straits Energy Principal" role="Straits Energy Holdings · Project Developer"
           setting="Indoor — office, warm light"
           quote="This is not a single-product energy project. This is an integrated infrastructure solution — every waste stream creates a revenue stream, and every revenue stream strengthens the investment case." />
-        <StatCard start={23} end={26} big="~155 ML/day" small="Wastewater received — a large, secured feedstock base (subject to confirmation)" bg={window.__resources.res_statbg_water_jpg} />
-        <StatCard start={26} end={29} big="~74 t/day" small="Dry sludge solids — base-load digester feed" bg={window.__resources.res_statbg_solids_jpg} />
-        <StatCard start={29} end={32} big="Since 1976" small="Established municipal site — no greenfield land or permitting risk" bg={window.__resources.res_statbg_site_jpg} />
+        <StatCard start={23} end={26} big="~155 ML/day" small="Wastewater received — a large, secured feedstock base (subject to confirmation)" bg="assets/statbg_water.jpg" />
+        <StatCard start={26} end={29} big="~74 t/day" small="Dry sludge solids — base-load digester feed" bg="assets/statbg_solids.jpg" />
+        <StatCard start={29} end={32} big="Since 1976" small="Established municipal site — no greenfield land or permitting risk" bg="assets/statbg_site.jpg" />
 
         {/* CH.02 — The asset */}
         <PlantFootprintOverlay start={32} end={41} />
-        <MapShot start={32} end={41} src={window.__resources.res_maps_gmaps_site_overview_png} loc="Fishwater Flats WWTW · Site Overview" cap="One site — a multi-revenue green infrastructure asset" stat="WWTW boundary · proposed plant footprint · satellite-verified" />
+        <MapShot start={32} end={41} src="assets/maps/gmaps_site_overview.png" loc="Fishwater Flats WWTW · Site Overview" cap="One site — a multi-revenue green infrastructure asset" stat="WWTW boundary · proposed plant footprint · satellite-verified" />
 
         {/* CH.03 — Five revenue streams */}
         <BlockFlowScene base={41} />
@@ -3075,18 +2172,18 @@ Object.assign(window, {
         <BenefitCard start={104} end={109} item={B.people}   tone={SKY} />
 
         {/* CH.05 — De-risked & deliverable */}
-        <ModelShot start={109} end={116} src={window.__resources.res_3d_07_3d_png} loc="Proof of Concept" cap="Phase 1 Pilot — Operational" stat="50 kWe exported to NMBM LV grid — live today, not a render" status="COMPLETED" />
-        <MapShot start={116} end={120} src={window.__resources.res_maps_gmaps_site_overview_png} loc="Fishwater Flats WWTW · Gqeberha" cap="The Existing Municipal Site" stat="Design complete · where Phases 2 & 3 will be built" status="EXISTING" fx={0.66} fy={0.78} toZoom={1.5} />
+        <ModelShot start={109} end={116} src="assets/3d/07-3d.png" loc="Proof of Concept" cap="Phase 1 Pilot — Operational" stat="50 kWe exported to NMBM LV grid — live today, not a render" status="COMPLETED" />
+        <MapShot start={116} end={120} src="assets/maps/gmaps_site_overview.png" loc="Fishwater Flats WWTW · Gqeberha" cap="The Existing Municipal Site" stat="Design complete · where Phases 2 & 3 will be built" status="EXISTING" fx={0.66} fy={0.78} toZoom={1.5} />
         <FlyThroughScene start={120} end={130} />
-        <ModelShot start={130} end={136} src={window.__resources.res_3d_plant_3d_png} seq="full" loc="Interactive 3D Model · Full Plant" cap="3D Preliminary Plant Model" stat="3× Triton digesters · CHP complex · gas holder dome — downloadable 3D model" />
-        <ModelShot start={136} end={142} src={window.__resources.res_3d_05_3d_png} seq="holder" loc="Gas Holder Dome + BGU" cap="Biogas Storage & Upgrading" stat="CO₂ offtake — term sheet, in finalisation · CNG + 7.7 km pipeline (in development)" status="FINALISATION" />
-        <ModelShot start={142} end={148} src={window.__resources.res_3d_09_3d_png} seq="feedstock" loc="Feedstock Receiving Zone" cap="Co-Digestion Intake — Gate-Fee Revenue" stat="Live bottom bins · FOG tank · blending tanks — >200 t/day organics" />
+        <ModelShot start={130} end={136} src="assets/3d/plant_3d_pdf.jpg" seq="full" loc="Interactive 3D Model · Full Plant" cap="3D Preliminary Plant Model" stat="3× Triton digesters · CHP complex · gas holder dome — downloadable 3D model" />
+        <ModelShot start={136} end={142} src="assets/3d/05-3d.png" seq="holder" loc="Gas Holder Dome + BGU" cap="Biogas Storage & Upgrading" stat="CO₂ offtake — term sheet, in finalisation · CNG + 7.7 km pipeline (in development)" status="FINALISATION" />
+        <ModelShot start={142} end={148} src="assets/3d/09-3d.png" seq="feedstock" loc="Feedstock Receiving Zone" cap="Co-Digestion Intake — Gate-Fee Revenue" stat="Live bottom bins · FOG tank · blending tanks — >200 t/day organics" />
         <QuoteCard start={148} end={158} name="EPC Technology Partner" role="Anaerobic Digestion Technology Provider (to be named on disclosure)"
           setting="Indoor — commissioning / plant-floor setting"
           quote="This is a proven co-digestion platform. What's being done at Fishwater Flats is deploying that proven technology where the environmental need — and the commercial case — are both exceptionally strong." />
 
         {/* CH.06 — The ask */}
-        <MapShot start={158} end={164} src={window.__resources.res_maps_gmaps_pipeline_corridor_coast_png} loc="Biomethane Pipeline Corridor" cap="7.7 km anchor pipeline route" stat="Dedicated route to secured industrial demand · in development" />
+        <MapShot start={158} end={164} src="assets/maps/gmaps_pipeline_corridor_coast.png" loc="Biomethane Pipeline Corridor" cap="7.7 km anchor pipeline route" stat="Dedicated route to secured industrial demand · in development" />
         <ClosingAerial start={164} end={172} />
         <EndCard start={172} end={186} />
 
@@ -3131,16 +2228,16 @@ Object.assign(window, {
         <TitleCard start={0} end={3} />
 
         {/* Hook + problem */}
-        <MapShot start={3} end={9} src={window.__resources.res_maps_gmaps_metro_wide_png} loc="Fishwater Flats WWTW · Gqeberha" fx={0.6} fy={0.62} toZoom={1.32} cap="Where the Coast Meets Capacity" stat="Real satellite view · WWTW outfall + coastline" />
+        <MapShot start={3} end={9} src="assets/maps/gmaps_metro_wide.png" loc="Fishwater Flats WWTW · Gqeberha" fx={0.6} fy={0.62} toZoom={1.32} cap="Where the Coast Meets Capacity" stat="Real satellite view · WWTW outfall + coastline" />
         <OpeningStatement start={3} end={9} problem="Gqeberha’s biggest wastewater works is under pressure — and its sludge shows up first on the coast." action="Straits Energy is turning that waste into clean energy — on the site that already exists." />
         <OutfallScene start={9} end={14} />
-        <StatCard start={14} end={18} big="~155 ML/day" small="Wastewater received at Fishwater Flats WWTW (subject to confirmation)" bg={window.__resources.res_statbg_water_jpg} />
-        <StatCard start={18} end={22} big="~74 t/day" small="Dry sludge solids to be responsibly managed" bg={window.__resources.res_statbg_solids_jpg} />
+        <StatCard start={14} end={18} big="~155 ML/day" small="Wastewater received at Fishwater Flats WWTW (subject to confirmation)" bg="assets/statbg_water.jpg" />
+        <StatCard start={18} end={22} big="~74 t/day" small="Dry sludge solids to be responsibly managed" bg="assets/statbg_solids.jpg" />
 
         {/* The idea */}
         <PlantFootprintOverlay start={22} end={28} />
-        <MapShot start={22} end={28} src={window.__resources.res_maps_gmaps_site_overview_png} loc="Fishwater Flats WWTW · Site Overview" cap="One site — a multi-revenue green infrastructure asset" stat="Built on the existing municipal footprint — no new land take" status="EXISTING" fx={0.66} fy={0.78} toZoom={1.5} />
-        <ModelShot start={28} end={33} src={window.__resources.res_3d_plant_3d_png} seq="full" loc="Interactive 3D Model · Full Plant" cap="What's Being Built" stat="3× Triton digesters · CHP complex · gas holder dome" status="DEVELOPMENT" />
+        <MapShot start={22} end={28} src="assets/maps/gmaps_site_overview.png" loc="Fishwater Flats WWTW · Site Overview" cap="One site — a multi-revenue green infrastructure asset" stat="Built on the existing municipal footprint — no new land take" status="EXISTING" fx={0.66} fy={0.78} toZoom={1.5} />
+        <ModelShot start={28} end={33} src="assets/3d/plant_3d_pdf.jpg" seq="full" loc="Interactive 3D Model · Full Plant" cap="What's Being Built" stat="3× Triton digesters · CHP complex · gas holder dome" status="DEVELOPMENT" />
         <CHPScene start={33} end={38} />
 
         {/* Impact highlights (rapid) */}
@@ -3150,11 +2247,11 @@ Object.assign(window, {
         <BenefitCard start={50} end={54} item={B.co2}      tone={GOLD} />
 
         {/* Proof + build */}
-        <ModelShot start={54} end={59} src={window.__resources.res_3d_07_3d_png} loc="Proof of Concept" cap="Phase 1 Pilot — Operational" stat="50 kWe exported to NMBM LV grid — live today, not a render" status="COMPLETED" />
-        <MapShot start={59} end={64} src={window.__resources.res_maps_gmaps_site_close_orbital_png} loc="Fishwater Flats WWTW — Close Orbital" cap="The land is there. The feedstock is there." stat="Real satellite view · plant footprint + pipelines mapped in" />
-        <ModelShot start={64} end={70} src={window.__resources.res_3d_02_3d_png} seq="digesters" loc="NE Elevation · Triton Digester Row" cap="Three Digesters — The Process Core" stat="3× high-solids CSTR · mesophilic · ~21-day HRT" />
+        <ModelShot start={54} end={59} src="assets/3d/07-3d.png" loc="Proof of Concept" cap="Phase 1 Pilot — Operational" stat="50 kWe exported to NMBM LV grid — live today, not a render" status="COMPLETED" />
+        <MapShot start={59} end={64} src="assets/maps/gmaps_site_close_orbital.png" loc="Fishwater Flats WWTW — Close Orbital" cap="The land is there. The feedstock is there." stat="Real satellite view · plant footprint + pipelines mapped in" />
+        <ModelShot start={64} end={70} src="assets/3d/02-3d.png" seq="digesters" loc="NE Elevation · Triton Digester Row" cap="Three Digesters — The Process Core" stat="3× high-solids CSTR · mesophilic · ~21-day HRT" />
         <CO2Scene start={70} end={75} />
-        <MapShot start={75} end={80} src={window.__resources.res_maps_gmaps_pipeline_corridor_coast_png} loc="Biomethane Pipeline Corridor" cap="7.7 km anchor pipeline route" stat="Dedicated route to nearby industry · in development" />
+        <MapShot start={75} end={80} src="assets/maps/gmaps_pipeline_corridor_coast.png" loc="Biomethane Pipeline Corridor" cap="7.7 km anchor pipeline route" stat="Dedicated route to nearby industry · in development" />
 
         {/* Close */}
         <ClosingAerial start={80} end={85} />

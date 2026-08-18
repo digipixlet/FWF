@@ -1,0 +1,813 @@
+The strongest stakeholder video should not begin with the technology. It should begin with the place, the challenges facing that place and the consequences of leaving those challenges unresolved.
+
+Purpose of this document
+This document sets out a first-pass narrative and storyboard framework for a proposed Fishwater Flats stakeholder video. Its purpose is to test the proposed story, sequence and key stakeholder messages before the development of a final script and production brief.
+
+The technical, regulatory, environmental and commercial statements contained in this draft remain subject to confirmation by the relevant members of the Project Team before production.
+
+The central story is:
+
+Nelson Mandela Bay faces three connected challenges: the responsible management of municipal sludge and organic waste; environmental and infrastructure pressure associated with the Fishwater Flats and Swartkops system; and growing demand from local industries for reliable, lower-carbon energy. The Fishwater Flats Biogas Project creates an integrated platform capable of responding to all three.
+
+The Project information currently available provides the core facts required to support this narrative. The Fishwater Flats Wastewater Treatment Works receives approximately 155 ML of wastewater per day and generates the equivalent of approximately 74 tonnes of dry sludge matter per day, subject to final technical confirmation. At the same time, local manufacturers remain dependent on fossil fuels and are increasingly exposed to carbon taxes, emissions-reporting requirements and pressure to decarbonise their operations.
+
+Phase 2 is intended to combine municipal sludge with controlled, source-separated organic wastes and convert those feedstocks into biomethane, renewable power and purified liquid CO₂, with the potential for additional environmental and agricultural value from carbon credits and processed digestate.
+
+Proposed video format for discussion
+
+I suggest producing a primary stakeholder film of approximately 8–9 minutes, structured so that shorter versions can later be cut from it:
+90-second introductory film for general stakeholders;
+3-minute regulator and municipal version;
+3-minute investor version;
+technical modules for partners, EPC contractors and suppliers;
+individual explainer clips for biomethane, CO₂, feedstock, digestion and logistics.
+
+The primary film should feel like a documentary-style infrastructure explainer rather than an investment presentation converted into video. Its first purpose should be to explain the Project clearly and credibly. Investor-specific financial information can then be incorporated into a separate, targeted version.
+
+
+Fishwater Flats Biogas Project
+
+Stakeholder Video — Narrative and Storyboard Framework
+Discussion Draft R0v2
+
+
+Suggested chapter architecture
+
+The video should visibly use chapter titles so that a non-technical viewer never feels lost:
+
+Opening
+
+The place and the problem
+The central idea
+How the system works
+Why it matters
+Why this project can happen
+The future state
+
+Closing
+
+Target duration: approximately 8–9 minutes.
+
+The final runtime will depend on whether interviews are incorporated into the primary film. If stakeholder interviews are included, the scripted voice-over should be shortened accordingly.
+
+
+
+Opening title
+
+Duration: 0:00–0:15
+
+Visuals
+
+Aerial footage of Gqeberha at sunrise.
+
+Move from the coastline and Swartkops estuary to the Fishwater Flats wastewater treatment works, then to nearby automotive and industrial facilities.
+
+Minimal opening text:
+
+Fishwater Flats Biogas Project
+Turning waste into cleaner industry, healthier infrastructure and long-term value.
+
+
+Voice-over
+
+“Every day, Nelson Mandela Bay must manage millions of litres of wastewater, while its industries need dependable energy and face growing pressure to reduce emissions.”
+
+“The Fishwater Flats Biogas Project brings these challenges together — turning waste into cleaner infrastructure, renewable energy and local value.”
+
+
+Narrative purpose: Establish immediately that the Project is not simply a collection of biogas equipment. It is proposed as an integrated municipal, environmental and industrial infrastructure platform.
+
+
+Chapter 1 — The place and the problem
+
+
+Scene 1: A city system under pressure
+
+Duration: 0:15–0:55
+
+Visuals
+Wastewater entering Fishwater Flats.
+Treatment basins, pumps and sludge-handling infrastructure.
+Animated map locating Fishwater Flats, Swartkops and the surrounding industrial areas.
+Archival or current footage of the wastewater treatment works.
+Carefully selected environmental footage of the estuary.
+
+On-screen facts
+Approximately 155 ML/day wastewater intake.
+Equivalent of approximately 74 tonnes/day of dry solids or dry matter.
+Original plant infrastructure dating from 1976.
+
+
+Voice-over
+
+“Fishwater Flats is a critical part of Nelson Mandela Bay’s wastewater infrastructure. Every day, the treatment works receives approximately 155 million litres of wastewater and generates substantial volumes of sludge that must be safely treated, stabilised and responsibly managed.”
+
+“As the city and its infrastructure requirements have evolved, the management of this material has become an increasingly important operational, financial and environmental challenge.”
+
+
+Production and verification note: The tone must remain constructive and solutions-focused. The film should not imply municipal failure. It should explain that infrastructure requirements have evolved and that additional, modern solids-management capacity is now required.
+
+
+
+Scene 2: The environmental consequence
+
+Duration: 0:55–1:25
+
+Visuals
+Water moving through the Swartkops estuary.
+Wetlands, birdlife, fishing and community activity.
+A restrained animation showing how inadequately managed solids can move through a water system.
+
+Voice-over
+
+“Where sludge and other organic material are not sustainably processed, the consequences can extend beyond the treatment works — affecting transport and disposal requirements, odour management, regulatory compliance and the environmental health of surrounding water systems.”
+
+“The question is therefore not whether this material must be managed. The question is whether it remains a long-term disposal burden, or whether its energy and nutrient value can be responsibly recovered.”
+
+Production and verification note: Environmental footage and animation must distinguish clearly between documented existing conditions, identified environmental risks and the anticipated benefits of the Project. No footage should imply a specific uncontrolled discharge or direct causation unless independently verified and approved.
+
+Key transition line
+
+“Fishwater Flats begins by changing the way we look at waste.”
+
+
+
+Scene 3: Industry faces a second problem
+
+Duration: 1:25–2:00
+
+Visuals
+Automotive manufacturing.
+Aluminium wheel production.
+Boilers, furnaces and industrial heat applications.
+LPG tankers and storage vessels.
+Shipping containers or vehicles destined for export.
+Animated carbon and energy price indicators.
+
+Voice-over
+
+“At the same time, the Eastern Cape’s industrial economy faces a different but connected challenge.”
+
+“Manufacturers require dependable thermal energy, yet many remain reliant on LPG and other carbon-intensive fuels. Carbon taxes are increasing, international customers and reporting frameworks are demanding more traceable emissions reductions, and not every industrial heat requirement can be met through renewable electricity alone.”
+
+“The region therefore needs access to a renewable gas solution that is locally produced, dependable and capable of supporting continuous industrial operations.”
+
+
+Narrative purpose: Establish the demand-side case for the Project before introducing the technical solution.
+
+
+
+Chapter 2 — The central idea
+
+Scene 4: Two problems become one opportunity
+
+Duration: 2:00–2:25
+
+Visuals
+
+Split screen:
+
+Left:
+municipal sludge;
+food waste;
+organic industrial waste.
+
+Right:
+industrial boilers;
+gas pipelines;
+beverage-grade CO₂ users;
+power generation.
+
+The two sides merge into an animated Fishwater Flats facility.
+
+Voice-over
+
+“The Fishwater Flats Biogas Project connects these municipal, environmental and industrial challenges.”
+
+“Municipal sludge and controlled, source-separated organic wastes become the feedstocks. Renewable gas, power and purified liquid carbon dioxide become the principal outputs, with the potential for additional value from carbon credits and processed digestate.”
+
+“The result is an integrated platform designed to convert material that would otherwise require treatment or disposal into useful energy and commercial products.”
+
+On-screen message
+Municipal sludge + source-separated organic waste + industrial energy demand
+
+An integrated waste-to-value platform
+
+Scene 5: What is being built
+
+Duration: 2:25–2:55
+
+Visuals
+Simplified site layout based on the project plant diagrams.
+Phase 1 pilot plant.
+Conceptual or reference images of full-scale digesters.
+Animation showing the future Phase 2 installation beside the existing works.
+
+Voice-over
+
+“The Project builds on more than fifteen years of development and the commissioning of a Phase 1 pilot facility at Fishwater Flats.”
+
+“Phase 2 is designed as a full-scale anaerobic digestion and gas-processing facility, with a target raw biogas production capacity of approximately 2,400 normal cubic metres per hour.”
+
+“The plant is intended to operate continuously as a long-life infrastructure asset, integrated with the wastewater treatment works and connected to the surrounding industrial economy.”
+
+
+Narrative purpose: Having established why the Project is needed, the film can now explain how the system will work.
+
+
+Chapter 3 — How the system works
+
+Scene 6: Step 1 — Feedstock
+
+Duration: 2:55–3:35
+
+Visuals
+
+A clean animated flow diagram.
+
+Feedstock streams:
+municipal primary and secondary sludge;
+food-processing waste;
+fats, oils and greases;
+dairy waste;
+brewery waste;
+abattoir and other source-separated organics.
+
+Show weighbridge, receiving hall, screening and preparation.
+
+Voice-over
+
+“The process begins with a continuous base load of municipal sludge produced at the Fishwater Flats Wastewater Treatment Works.”
+
+“This will be supplemented with controlled, tested and source-separated organic materials from food producers, dairies, breweries, distributors and other industrial suppliers.”
+
+“These additional feedstocks can improve biogas yield while providing local businesses with a more productive and traceable alternative to landfill disposal.”
+
+Key stakeholder message: The facility is not intended to receive mixed municipal refuse. External feedstocks will comprise defined, controlled, tested and source-separated organic waste streams accepted in accordance with the plant’s technical, environmental and operating requirements.
+
+On-screen facts
+Municipal sludge base load: equivalent of approximately 74 tonnes/day of dry solids or dry matter.
+More than 200 tonnes/day of external organic waste identified.
+Multiple industrial feedstock sources.
+Laboratory biomethane potential testing completed for key streams.
+
+Scene 7: Step 2 — Anaerobic digestion
+
+Duration: 3:35–4:10
+
+Visuals
+
+Cutaway animation of a digester.
+
+Show:
+material entering;
+mixing;
+biological breakdown without oxygen;
+gas collecting above;
+digestate leaving the vessel.
+
+Voice-over
+
+“Inside the digesters, naturally occurring microorganisms break down the organic material in the absence of oxygen.”
+
+“This process is known as anaerobic digestion.”
+
+“Over a controlled retention period, the organic material is stabilised and converted into biogas — expected to contain approximately sixty percent methane — together with a residual material known as digestate.”
+
+“By capturing the gas within a controlled process, the Project can recover renewable energy and reduce the release of methane associated with the uncontrolled breakdown of organic material.”
+
+Technical overlay
+Three high-solids continuously stirred digesters.
+Mesophilic operation.
+Target plant availability above 95%.
+Approximately 21-day hydraulic retention period.
+
+
+Production note: The engineering data should be shown through clear visual overlays and animation rather than read in full as voice-over.
+
+
+Scene 8: Step 3 — Biogas cleaning and upgrading
+
+Duration: 4:10–4:45
+
+Visuals
+
+Animation showing raw biogas separating into:
+biomethane;
+CO₂;
+impurities removed.
+
+Show membranes or PSA system in a simplified way.
+
+Voice-over
+
+“Raw biogas must first be cleaned and upgraded before it can be used as an industrial fuel.”
+
+“Moisture, sulphur compounds and other impurities are removed, after which the methane is separated and refined into biomethane — a renewable gas capable of replacing conventional fossil gas in suitable industrial applications.”
+
+“The carbon dioxide separated during this process can also be recovered, purified and converted into a useful commercial product.”
+
+
+Scene 9: Step 4 — Purified liquid CO₂
+
+Duration: 4:45–5:10
+
+Visuals
+CO₂ purification.
+Liquefaction.
+Cryogenic storage tanks.
+Road tanker loading.
+Beverage, food-processing or cold-chain applications.
+
+Voice-over
+
+“The separated carbon dioxide will be purified and liquefied to the required food- and beverage-grade specification before being stored for collection and distribution.”
+
+“The Project is designed to produce approximately 30 tonnes per day, creating the potential for an important regional supply source serving beverage, food-processing and other approved industrial applications.”
+
+On-screen message
+
+A by-product becomes a second commercial product.
+
+
+Narrative purpose: Demonstrate clearly how a gas separated during the upgrading process can become a second commercial product rather than being treated solely as a residual stream.
+
+
+
+Scene 10: Step 5 — Biomethane delivery
+
+Duration: 5:10–5:55
+
+The film should distinguish clearly between the core delivery route, commercial opportunities under development and potential future expansion routes.
+
+10A — Dedicated pipeline: anchor commercial route under development
+
+Visuals
+
+Animated 7.5 km route from Fishwater Flats to Borbet.
+
+
+
+
+
+Voice-over
+
+“The primary delivery concept includes a dedicated biomethane pipeline connecting Fishwater Flats to nearby industrial demand.”
+
+“The anchor commercial opportunity currently under development is the supply of biomethane to Borbet South Africa, where renewable gas could displace fossil fuel used in aluminium wheel manufacturing.”
+
+10B — Virtual pipeline: additional commercial route under development
+
+Visuals
+
+Compression into tube trailers.
+
+Trailer travelling approximately 22 km to an automotive facility.
+
+Decompression and delivery.
+
+Voice-over
+
+“Biomethane can also be compressed and transported by road in high-pressure tube trailers, creating what is commonly referred to as a virtual pipeline.”
+
+“This delivery model can provide renewable gas to customers that are not directly connected to the dedicated pipeline.”
+
+10C — Vehicle fuel: future expansion opportunity
+
+Visuals
+
+CNG truck filling station.
+
+Manganese haulage or other heavy vehicles.
+
+
+
+
+Voice-over
+
+“As a future expansion opportunity, compressed biomethane could also be used as a lower-carbon fuel for suitable heavy vehicles operating within the Swartkops industrial and logistics corridor.”
+
+
+Disclosure note: The commercial status of each route and the right to name or show any proposed customer must be confirmed before production of a public-facing version.
+
+Scene 11: Step 6 — Renewable power and plant self-sufficiency
+
+Duration: 5:55–6:15
+
+Visuals
+CHP engine.
+Electricity flowing to plant systems.
+Heat recovery returning to digestion.
+Municipal power-meter animation reducing.
+
+Voice-over
+
+“A combined heat and power system will convert part of the biogas into electricity and useful heat.”
+
+“The electricity and recovered heat can support the Project’s own operating requirements and, subject to the final technical and commercial arrangement, reduce part of the electricity demand associated with the wider Fishwater Flats system.”
+
+
+Verification required: Confirm the installed CHP capacity, the Project’s internal consumption, the net power available for offset and the contractual basis on which any electricity benefit is attributed to the wastewater treatment works.
+
+
+Scene 12: Step 7 — Digestate and nutrients
+
+Duration: 6:15–6:35
+
+Visuals
+Digestate separation.
+Solid and liquid fractions.
+Soil application, compost blending or biofertiliser production.
+Farmers and agricultural land.
+
+Voice-over
+
+“After digestion, the remaining material is stabilised, is expected to have reduced odour characteristics and can be more suitable for dewatering and further processing.”
+
+“Subject to regulatory approval, final processing and compliance with the required product specifications, part of the nutrient value may be recovered through biofertiliser, soil-enhancement or other approved agricultural applications.”
+
+
+Commercial and regulatory status note: Digestate beneficiation must be presented as a controlled development opportunity and not as a guaranteed product or revenue stream until the required treatment, certification, market and regulatory requirements have been completed.
+
+
+
+Chapter 4 — Why it matters
+
+
+Scene 13: Benefits for the municipality and regulators
+
+Duration: 6:35–7:00
+
+Visuals
+
+Icons or real footage showing:
+reduced sludge burden;
+improved solids management;
+reduced estuary risk;
+infrastructure investment;
+jobs and training;
+regulatory monitoring.
+
+Voice-over
+
+For the municipality and regulators, the Project is intended to provide additional solids-management capacity, support the long-term operation of critical wastewater infrastructure and contribute to improved environmental performance.”
+
+“It also creates a framework through which private capital, specialist technology, dedicated operating capability and long-term maintenance disciplines can support a critical municipal infrastructure environment.”
+
+“The Project will need to be designed, constructed and operated so that the existing wastewater treatment process can continue safely and reliably throughout implementation and long-term operation.”
+
+Regulatory emphasis
+compliance;
+monitoring;
+traceability;
+operational accountability;
+safe gas and pipeline systems;
+no compromise to wastewater treatment obligations.
+construction and operation without compromising the continuity or statutory obligations of the existing wastewater treatment works.
+
+
+
+Scene 14: Benefits for industrial customers
+
+Duration: 7:00–7:20
+
+Visuals
+
+Industrial customer receives biomethane.
+
+Carbon dashboard decreases.
+
+Product is exported from South Africa.
+
+Voice-over
+
+“For participating industrial customers, the Project creates the opportunity to access a locally produced, traceable and continuously available renewable gas.”
+
+“By replacing suitable fossil-fuel consumption, biomethane can reduce direct Scope 1 emissions, limit exposure to escalating carbon costs and support export-oriented manufacturers responding to increasingly demanding emissions-reporting requirements.”
+
+
+
+Scene 15: Benefits for waste suppliers
+
+Duration: 7:20–7:35
+
+Visuals
+
+Organic waste collected separately at food-processing facilities.
+
+Digital tracking from supplier to plant.
+
+Voice-over
+
+“For food producers and other approved waste suppliers, Fishwater Flats can provide a controlled, traceable and productive destination for source-separated organic waste.”
+
+“Instead of being sent directly to landfill, the remaining energy value in this material can be recovered, with the potential for further nutrient recovery from the processed digestate.”
+
+
+
+Scene 16: Benefits for investors and funders
+
+Duration: 7:35–8:00
+
+Visuals
+
+Do not show dense financial tables.
+
+Use a simple wheel of diversified revenues:
+biomethane;
+CO₂;
+gate fees;
+power;
+carbon;
+digestate.
+
+Show long-term infrastructure life.
+
+Voice-over
+
+“For investors and funders, Fishwater Flats is being developed around a diversified combination of core and potential revenue streams rather than reliance on a single product or customer.”
+
+“The proposed revenue base includes biomethane, liquid carbon dioxide, organic waste-receiving fees, embedded energy value and environmental credits, with digestate products representing a potential additional upside. Together, these are intended to support a long-life infrastructure platform with a planned operating life of more than twenty-five years.”
+
+
+Narrative note: The general stakeholder film should explain the diversified commercial model without presenting detailed financial returns. Project IRR, equity IRR, capital structure and the funding requirement should be reserved for a dedicated investor version.
+
+
+
+Chapter 5 — Why this project can happen
+
+Scene 17: Development already completed
+
+Duration: 8:00–8:25
+
+Visuals
+
+A timeline moving from early project development to the present.
+
+Milestones light up:
+environmental authorisation;
+waste management licence;
+municipal agreements;
+Phase 1 pilot;
+laboratory testing;
+engineering;
+commercial negotiations;
+financing process.
+
+Voice-over
+
+“The Fishwater Flats Biogas Project is not beginning from a blank page.”
+
+“The Project has progressed through more than fifteen years of development. Major environmental and waste approvals have been obtained, key municipal agreements have been concluded, Phase 1 has been commissioned, selected feedstocks have been tested and the principal commercial and funding arrangements are being advanced.”
+
+“The next phase is to complete the remaining commercial, funding, licensing and implementation requirements and move from development into full-scale delivery.”
+
+Verification required: Each milestone must be categorised and visually labelled as one of the following:
+Completed
+Contracted
+In finalisation
+In development
+Future expansion
+
+No approval, agreement or commercial opportunity should be presented as complete unless the underlying documentation supports that status.
+
+
+Scene 18: The delivery ecosystem
+
+Duration: 8:25–8:45
+
+Visuals
+
+Show the parties by role, not as a crowded logo wall:
+project company;
+municipality;
+owner’s engineer;
+technology provider;
+EPC;
+O&M;
+funders;
+feedstock suppliers;
+industrial customers.
+
+Voice-over
+
+“A Project of this scale cannot be delivered by one organisation acting alone.”
+
+“It requires a coordinated delivery ecosystem comprising the municipality, the Project Company, engineers, technology providers, construction teams, operators, funders, feedstock suppliers, logistics providers and industrial customers.”
+
+“Each participant will have a defined role in developing and operating a plant that is safe, reliable, compliant and commercially sustainable.”
+
+“The digestion, gas upgrading, pipeline, compression, storage and CO₂-handling systems will be designed, permitted and operated in accordance with the applicable engineering, environmental and safety requirements.”
+
+
+Production note: The detailed O&M structure should be simplified into an animated “who does what” diagram showing the contractual and operating interfaces without creating a crowded logo wall..
+
+
+
+Closing
+
+Scene 19: The future state
+
+Duration: 8:45–9:10
+
+Visuals
+
+Return to the aerial map.
+
+Animate:
+waste moving into Fishwater Flats;
+clean gas moving to industry;
+CO₂ moving to market;
+renewable power supporting operations;
+fewer organics moving to landfill;
+healthier river and estuary imagery;
+jobs and industrial activity.
+
+Voice-over
+
+“Fishwater Flats is a Project about changing flows.”
+
+“Municipal sludge and organic waste that require responsible management become feedstock.”
+
+“Methane is captured through a controlled process and converted into renewable energy.”
+
+“Carbon dioxide separated during gas upgrading becomes a usable commercial product.”
+
+“Local industry gains a practical pathway to reduce its dependence on fossil fuel.”
+
+“And critical municipal infrastructure becomes part of a wider circular economy serving the city, industry and the environment.”
+
+
+
+
+Final closing statement
+
+Duration: 9:10–9:25
+
+Visuals
+
+Project name and simple CGI or aerial of the planned site.
+
+Voice-over
+
+“The Fishwater Flats Biogas Project is designed to convert a regional waste-management challenge into cleaner infrastructure, renewable industrial energy and long-term local economic value.”
+
+“Waste to energy. Waste to value. Infrastructure for the future.”
+
+
+End card
+
+Fishwater Flats Biogas Project
+Waste to energy. Waste to value. Infrastructure for the future.
+
+A proposed integrated waste-to-value infrastructure platform for Nelson Mandela Bay.
+
+
+Stakeholder messaging matrix
+Stakeholder
+What they need to understand
+Principal message
+Municipality
+Operational and financial value
+The Project is intended to add sludge-processing capacity, support critical wastewater infrastructure and strengthen long-term operational resilience
+Environmental regulators
+Compliance and environmental control
+The Project will process controlled organic feedstocks through a monitored system intended to improve stabilisation, emissions management and material traceability
+Energy and pipeline regulators
+Safety and technical integrity
+Gas upgrading, compression, storage, pipeline delivery and vehicle-fuelling systems will be designed, licensed and operated under the applicable technical, safety and regulatory controls.
+Local communities
+Tangible local benefit
+The Project is intended to support improved environmental performance, local investment, skills development and employment opportunities
+Industrial customers
+Reliable decarbonisation
+Renewable gas can replace suitable fossil-fuel consumption in industrial heat applications that are difficult or uneconomic to electrify
+Waste suppliers
+Responsible disposal route
+Approved source-separated organic waste can become a productive feedstock rather than being sent directly to landfill.
+Investors and lenders
+Bankability and resilience
+A combination of core contracted revenues and additional commercial opportunities is intended to support a diversified, long-life infrastructure asset.
+EPC and technology partners
+Clear scope and interfaces
+The Project requires the coordinated integration of feedstock handling, digestion, gas upgrading, CO₂ purification and liquefaction, CHP, compression, storage, pipelines and control systems.
+Suppliers
+Scale and procurement opportunity
+The Project is expected to create procurement opportunities across civil, mechanical, electrical, instrumentation, transport, spares, maintenance and operating support.
+Existing WWTW operators and employees
+Operational continuity and interface management
+The Project must be implemented without compromising existing wastewater treatment operations and will require clearly defined operating and safety interfaces.
+
+
+Important narrative disciplines
+
+1. Keep the primary film explanatory and broadly stakeholder-neutral
+
+The primary film should not feel as though it is primarily asking the audience for funding. It should first establish confidence in the problem definition, the Project logic, the technical process, the implementation status and the stakeholder benefits.
+
+The detailed funding requirement, capital structure and projected investor returns should be presented in a separate investor-specific version.
+
+
+2. Distinguish completed, contracted and future elements consistently
+
+The film should carefully distinguish between:
+approvals already obtained;
+contracts executed;
+term sheets signed;
+agreements under negotiation;
+future opportunities.
+
+For example, the memorandum describes Puregas as having an executed term sheet, Borbet as being in GSA negotiations, and Volkswagen and Swartkops opportunities at earlier commercial stages. These should not all be presented as equally contracted.
+
+A useful visual convention would be:
+Completed — approval, work or milestone fully achieved
+Contracted — binding agreement executed
+In finalisation — substantive terms agreed but final documentation outstanding
+In development — active technical or commercial engagement underway
+Future expansion — potential opportunity not included in the current core case
+
+The same classifications should be used throughout the film, maps, graphics and supporting documents.
+
+
+3. Verify all counterparties and disclosure rights
+
+No customer, supplier, funder, technology provider or municipal counterparty should be named, shown or represented by logo unless the current commercial status and disclosure rights have been confirmed. Where approval has not been obtained, the film should use a generic description such as “a nearby automotive component manufacturer” or “a prospective industrial offtaker”.
+
+
+4. Avoid excessive jargon
+
+Terms such as CSTR, PSA, HRT, biomethane, digestate and take-or-pay can be used, but each should be explained visually and in plain language when first introduced.
+
+
+5. Build safety and operational continuity into the story
+
+Safety should not appear only as a regulator-facing footnote. The film should show that gas handling, pipeline operation, compression, cryogenic storage, tanker loading, process monitoring and emergency response are integral to the design and operating philosophy.
+
+It should also demonstrate that the Project will be implemented through clearly defined interfaces with the existing wastewater treatment works.
+
+
+6. Show physical movement
+
+The strongest visual device will be the movement of material and energy:
+
+sludge and organics → digestion → raw biogas → biomethane and CO₂ → industry, transport and power.
+
+That “journey” should be the visual spine of the film.
+
+
+7. Position the project as infrastructure, not merely equipment
+
+The enduring message should be:
+
+
+This is an integrated municipal, environmental and industrial platform.
+
+The digesters are central, but they are only one part of the story. The actual project includes feedstock agreements, receiving systems, gas upgrading, liquefaction, storage, compression, pipelines, logistics, power, O&M and long-term commercial arrangements.
+
+
+Production material that should now be assembled
+
+The next storyboard iteration should include an asset register covering:
+drone footage of Fishwater Flats and Swartkops;
+existing Phase 1 footage;
+wastewater and sludge-handling footage;
+approved site layout and Phase 2 renders;
+3D digester and gas-upgrading animation;
+pipeline route map;
+Borbet and other industrial process footage;
+CNG compression and tube-trailer reference footage;
+CO₂ liquefaction and tanker-loading footage;
+interviews with the project company, municipality, technical team and potential customers;
+approval, construction and implementation timeline graphics;
+environmental and community footage.
+• current photographs and operating footage of the Phase 1 pilot facility;
+verified sludge and wastewater flow data, with an agreed description of the 74 tonnes/day figure;
+current approval, licence and agreement status schedule;
+written confirmation of counterparties that may be named or shown;
+process safety, gas detection, control-room and emergency-response footage or animation;
+construction interface and operational-continuity plan for the existing wastewater treatment works;
+approved terminology for Phase 1 status, CO₂ specification, digestate products and power offset;
+status-coded map of the dedicated pipeline, virtual pipeline and potential future expansion routes.
+
+Once the Team has agreed the central narrative and verified the underlying facts, the next step will be to convert this framework into a production-ready storyboard. That storyboard should contain one row per shot and identify the timecode, narrative purpose, picture, animation, draft voice-over, on-screen text, proposed interview contribution, factual source, disclosure status and required production asset.
+
+
+
+Decisions required from the Project Team
+
+Before the storyboard is progressed into a final script and production brief, the Team is requested to confirm:
+Whether the central narrative and chapter structure are agreed. 
+Whether the primary film will be public-facing, stakeholder-restricted or investor-confidential. 
+The intended target runtime and whether interviews will form part of the primary film. 
+The approved description of the Phase 1 facility and its current operating status. 
+The correct basis and terminology for the wastewater and sludge figures used. 
+Which approvals, agreements and implementation milestones may be described as complete. 
+Which commercial counterparties may be named, shown or represented by logo. 
+Which elements form part of the core Project scope and which are commercial opportunities or future expansion. 
+The correct description of the Project’s CHP capacity and net electricity benefit. 
+The approved description of the CO₂ product and the certification process required. 
+The status of digestate processing, certification and intended end use. 
+The safety, construction-interface and operational-continuity messages that must be included. 
+The project footage, drawings, maps, renders and other production assets currently available. 
+The person or workstream responsible for final technical, regulatory, commercial and legal verification. 
+The proposed production budget, timetable and approval process.
