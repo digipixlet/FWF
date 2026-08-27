@@ -1,0 +1,1065 @@
+<title>Fishwater Flats Shot List</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,500;0,700;1,400;1,500&family=Barlow+Condensed:wght@600;700;800;900&display=swap">
+
+<style>
+:root {
+  --bg: #EEF3F8;
+  --surface: #FFFFFF;
+  --surface2: #F4F7FB;
+  --ink: #0A1929;
+  --sub: #4A6070;
+  --dim: #7A98B0;
+  --border: #C0D4E6;
+  --border-light: #DDE8F2;
+  --accent: #0090E0;
+  --accent-dk: #005FA0;
+  --gold: #9A7000;
+  --gold-bg: #FDF6E3;
+  --vo-c: #0090E0;
+  --sot-c: #9A7000;
+  --text-c: #1A90A8;
+  --silent-c: #5A7888;
+  --completed-c: #1A9E5A; --completed-bg: #E8F8EF;
+  --existing-c: #0070C0; --existing-bg: #E3EFF8;
+  --proposed-c: #7040C8; --proposed-bg: #EDE8F8;
+  --dev-c: #C06000; --dev-bg: #FBF0E2;
+  --final-c: #008898; --final-bg: #E2F4F6;
+  --placeholder-c: #C02828; --placeholder-bg: #FAEBEB;
+  --note-bg: #FFF8E8;
+  --note-border: #D4A020;
+  --row-stripe: #F7FAFD;
+  --appr-bg: #E8F6EE; --appr-c: #1A8A4C;
+  --rev-bg: #FFF0E0; --rev-c: #C05500;
+  --hold-bg: #F0EAFA; --hold-c: #6040B0;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #050D15; --surface: #0B1929; --surface2: #0D2235;
+    --ink: #D5E8F5; --sub: #6888A0; --dim: #3C5468;
+    --border: #162840; --border-light: #1C3550;
+    --accent: #0090E0; --accent-dk: #40B8FF;
+    --gold: #FBB708; --gold-bg: #1A1400;
+    --vo-c: #4DB8FF; --sot-c: #FBB708; --text-c: #50CCE0; --silent-c: #7898A8;
+    --completed-c: #40D080; --completed-bg: #042010;
+    --existing-c: #4DB0FF; --existing-bg: #041828;
+    --proposed-c: #A080E8; --proposed-bg: #120A28;
+    --dev-c: #F0A040; --dev-bg: #1A0C00;
+    --final-c: #30C0D0; --final-bg: #041820;
+    --placeholder-c: #F06060; --placeholder-bg: #1A0404;
+    --note-bg: #0F0900; --note-border: #C09030;
+    --row-stripe: #0D2035;
+    --appr-bg: #041810; --appr-c: #40D080;
+    --rev-bg: #180A00; --rev-c: #F0A040;
+    --hold-bg: #0C0620; --hold-c: #A080E8;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #050D15; --surface: #0B1929; --surface2: #0D2235;
+  --ink: #D5E8F5; --sub: #6888A0; --dim: #3C5468;
+  --border: #162840; --border-light: #1C3550;
+  --accent: #0090E0; --accent-dk: #40B8FF;
+  --gold: #FBB708; --gold-bg: #1A1400;
+  --vo-c: #4DB8FF; --sot-c: #FBB708; --text-c: #50CCE0; --silent-c: #7898A8;
+  --completed-c: #40D080; --completed-bg: #042010;
+  --existing-c: #4DB0FF; --existing-bg: #041828;
+  --proposed-c: #A080E8; --proposed-bg: #120A28;
+  --dev-c: #F0A040; --dev-bg: #1A0C00;
+  --final-c: #30C0D0; --final-bg: #041820;
+  --placeholder-c: #F06060; --placeholder-bg: #1A0404;
+  --note-bg: #0F0900; --note-border: #C09030;
+  --row-stripe: #0D2035;
+  --appr-bg: #041810; --appr-c: #40D080;
+  --rev-bg: #180A00; --rev-c: #F0A040;
+  --hold-bg: #0C0620; --hold-c: #A080E8;
+}
+
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Barlow', sans-serif;
+  font-size: 13px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── Masthead ── */
+.masthead {
+  background: var(--accent);
+  color: #fff;
+  padding: 0;
+  position: relative;
+  overflow: hidden;
+}
+.masthead-inner {
+  display: flex;
+  align-items: stretch;
+  min-height: 100px;
+}
+.masthead-left {
+  padding: 24px 32px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 6px;
+}
+.masthead-eyebrow {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+.masthead-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 38px;
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.05;
+  text-wrap: balance;
+}
+.masthead-sub {
+  font-size: 13px;
+  font-weight: 500;
+  opacity: 0.8;
+  margin-top: 2px;
+}
+.masthead-meta {
+  padding: 24px 32px;
+  border-left: 1px solid rgba(255,255,255,0.2);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 8px;
+  min-width: 220px;
+  background: rgba(0,0,0,0.12);
+}
+.meta-item { display: flex; flex-direction: column; gap: 1px; }
+.meta-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  opacity: 0.6;
+}
+.meta-value {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  opacity: 1;
+}
+.masthead-accent {
+  width: 8px;
+  background: #FBB708;
+  flex-shrink: 0;
+}
+
+/* ── Legend ── */
+.legend {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 32px;
+  display: flex;
+  align-items: center;
+  gap: 32px;
+  flex-wrap: wrap;
+}
+.legend-group {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.legend-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 2.5px;
+  text-transform: uppercase;
+  color: var(--dim);
+}
+.legend-items {
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  font-weight: 500;
+  color: var(--sub);
+}
+.legend-swatch {
+  width: 10px;
+  height: 10px;
+  border-radius: 2px;
+  flex-shrink: 0;
+}
+.legend-pill {
+  padding: 2px 7px;
+  border-radius: 3px;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+}
+.legend-div {
+  width: 1px;
+  height: 28px;
+  background: var(--border);
+}
+
+/* ── Chapter header ── */
+.chapter-header {
+  display: flex;
+  align-items: center;
+  background: var(--ink);
+  color: #fff;
+  padding: 0 0 0 32px;
+  margin-top: 24px;
+  break-inside: avoid;
+}
+.chapter-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 52px;
+  font-weight: 900;
+  opacity: 0.18;
+  line-height: 1;
+  margin-right: 18px;
+  flex-shrink: 0;
+  color: #fff;
+}
+.chapter-info {
+  flex: 1;
+  padding: 14px 0;
+}
+.chapter-eyebrow {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 3px;
+  text-transform: uppercase;
+  opacity: 0.5;
+}
+.chapter-name {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+}
+.chapter-bar {
+  width: 6px;
+  align-self: stretch;
+  background: #FBB708;
+  margin-left: auto;
+  flex-shrink: 0;
+}
+
+/* ── Shot table wrapper ── */
+.shots-wrapper {
+  padding: 0 32px 0 32px;
+}
+
+/* ── Shot row ── */
+.shot-row {
+  display: grid;
+  grid-template-columns: 88px 1fr 90px;
+  border-bottom: 1px solid var(--border-light);
+  background: var(--surface);
+  break-inside: avoid;
+}
+.shot-row:nth-child(even) { background: var(--row-stripe); }
+.shot-row.approved { background: var(--appr-bg) !important; }
+.shot-row.revise   { background: var(--rev-bg)  !important; }
+.shot-row.hold     { background: var(--hold-bg) !important; }
+
+/* left sidebar */
+.shot-left {
+  padding: 12px 10px 12px 0;
+  border-right: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  gap: 4px;
+  position: relative;
+}
+.shot-left::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  border-radius: 0;
+}
+.shot-left.vo::before { background: var(--vo-c); }
+.shot-left.sot::before { background: var(--sot-c); }
+.shot-left.text::before { background: var(--text-c); }
+.shot-left.silent::before { background: var(--silent-c); }
+
+.shot-num {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 26px;
+  font-weight: 900;
+  color: var(--ink);
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.shot-tc {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--sub);
+  text-align: right;
+  letter-spacing: 0.3px;
+  font-variant-numeric: tabular-nums;
+}
+.shot-dur {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--dim);
+  text-align: right;
+  letter-spacing: 0.5px;
+}
+.audio-badge {
+  display: inline-block;
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  padding: 2px 5px;
+  border-radius: 2px;
+  margin-top: 4px;
+}
+.audio-badge.vo    { background: var(--vo-c); color: #fff; }
+.audio-badge.sot   { color: var(--sot-c); background: var(--gold-bg); border: 1px solid var(--sot-c); }
+.audio-badge.text  { color: var(--text-c); background: rgba(26,144,168,0.12); border: 1px solid var(--text-c); }
+.audio-badge.silent { color: var(--silent-c); background: rgba(90,120,136,0.10); border: 1px solid var(--silent-c); }
+
+/* middle content */
+.shot-mid {
+  padding: 11px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+.shot-scene {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  color: var(--ink);
+  text-transform: uppercase;
+}
+.shot-visual {
+  font-size: 12px;
+  color: var(--sub);
+  line-height: 1.5;
+}
+.shot-audio {
+  font-size: 12px;
+  font-style: italic;
+  color: var(--ink);
+  line-height: 1.5;
+  padding: 5px 8px;
+  border-left: 2px solid var(--border);
+  background: var(--surface2);
+  border-radius: 0 3px 3px 0;
+  margin-top: 1px;
+}
+.shot-note {
+  font-size: 11px;
+  color: #7A4800;
+  line-height: 1.45;
+  padding: 5px 8px 5px 24px;
+  background: var(--note-bg);
+  border: 1px solid #E8B830;
+  border-radius: 3px;
+  position: relative;
+  margin-top: 2px;
+}
+.shot-note::before {
+  content: '⚠';
+  position: absolute;
+  left: 7px;
+  top: 4px;
+  font-size: 11px;
+  color: #C08000;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) .shot-note { color: #E8B060; }
+}
+:root[data-theme="dark"] .shot-note { color: #E8B060; }
+
+/* right column — status + approval */
+.shot-right {
+  padding: 10px 10px 10px 10px;
+  border-left: 1px solid var(--border-light);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+.status-badge {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  text-transform: uppercase;
+  padding: 3px 6px;
+  border-radius: 3px;
+  text-align: center;
+  line-height: 1.3;
+  width: 100%;
+}
+.approval-group {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  width: 100%;
+}
+.appr-btn {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.3px;
+  padding: 3px 4px;
+  border-radius: 3px;
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+  text-align: center;
+  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  width: 100%;
+}
+.appr-btn:hover { border-color: var(--sub); color: var(--sub); }
+.appr-btn.active-appr { background: var(--appr-bg); color: var(--appr-c); border-color: var(--appr-c); }
+.appr-btn.active-rev  { background: var(--rev-bg);  color: var(--rev-c);  border-color: var(--rev-c); }
+.appr-btn.active-hold { background: var(--hold-bg); color: var(--hold-c); border-color: var(--hold-c); }
+
+/* ── Review summary bar ── */
+.review-bar {
+  display: flex;
+  gap: 0;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  margin-top: 24px;
+}
+.review-stat {
+  flex: 1;
+  padding: 16px 20px;
+  border-right: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+.review-stat:last-child { border-right: none; }
+.review-count {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 32px;
+  font-weight: 800;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+.review-stat-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--sub);
+}
+
+/* ── Sign-off ── */
+.signoff {
+  padding: 32px;
+  background: var(--surface);
+  border-top: 3px solid var(--accent);
+  margin-top: 24px;
+}
+.signoff-title {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+  color: var(--ink);
+  margin-bottom: 6px;
+}
+.signoff-sub {
+  font-size: 12px;
+  color: var(--sub);
+  margin-bottom: 24px;
+  max-width: 600px;
+  line-height: 1.5;
+}
+.signoff-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 24px;
+}
+.sig-block { display: flex; flex-direction: column; gap: 4px; }
+.sig-label {
+  font-family: 'Barlow Condensed', sans-serif;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  color: var(--sub);
+}
+.sig-name {
+  font-weight: 700;
+  font-size: 13px;
+  color: var(--ink);
+  margin-bottom: 2px;
+}
+.sig-role { font-size: 12px; color: var(--sub); }
+.sig-line {
+  margin-top: 18px;
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 4px;
+  font-size: 11px;
+  color: var(--dim);
+}
+.sig-date-line { margin-top: 8px; border-bottom: 1px solid var(--border); padding-bottom: 4px; }
+
+/* ── Footer ── */
+.doc-footer {
+  text-align: center;
+  padding: 16px 32px;
+  font-size: 10px;
+  color: var(--dim);
+  letter-spacing: 0.5px;
+}
+
+/* ── Print ── */
+@media print {
+  body { font-size: 11px; }
+  .masthead-title { font-size: 30px; }
+  .chapter-num { font-size: 40px; }
+  .shot-num { font-size: 20px; }
+  .appr-btn, .approval-group { display: none; }
+  .chapter-header { margin-top: 0; page-break-before: always; }
+  .chapter-header:first-of-type { page-break-before: auto; }
+  .shot-row { break-inside: avoid; }
+}
+
+.content-wrapper { max-width: 1100px; margin: 0 auto; }
+</style>
+
+<div class="content-wrapper">
+  <div id="root"></div>
+</div>
+
+<script>
+const CHAPTERS = {
+  '00': { num: '', name: 'Opening' },
+  '01': { num: '01', name: 'The Place and the Problem' },
+  '02': { num: '02', name: 'The Central Idea' },
+  '03': { num: '03', name: 'How the System Works' },
+  '04': { num: '04', name: 'Why It Matters' },
+  '05': { num: '05', name: 'Why This Project Can Happen' },
+  '06': { num: '06', name: 'The Future State' },
+};
+
+const STATUS = {
+  COMPLETED:    { label: 'Completed',       c: '#1A9E5A', bg: '#E8F8EF' },
+  EXISTING:     { label: 'Existing',        c: '#0070C0', bg: '#E3EFF8' },
+  PROPOSED:     { label: 'Proposed',        c: '#7040C8', bg: '#EDE8F8' },
+  DEVELOPMENT:  { label: 'In Development',  c: '#C06000', bg: '#FBF0E2' },
+  FINALISATION: { label: 'In Finalisation', c: '#008898', bg: '#E2F4F6' },
+  PLACEHOLDER:  { label: 'Footage Required',c: '#C02828', bg: '#FAEBEB' },
+};
+
+const SHOTS = [
+  // ── OPENING ──────────────────────────────────────────────────────────────────
+  { ch: '00', id: 'S01', tc: '0:00', tcOut: '0:05', dur: '5s', type: 'SILENT',
+    scene: 'Title Card',
+    visual: 'Straits Energy Holdings logo (project owner) and EnergiDrop logo (power & project management partner) over black. Title: "Fishwater Flats Biogas Facility" · subtitle: "Gqeberha · Eastern Cape · South Africa".',
+    audio: 'Ambient music — no narration.',
+    status: null, notes: null },
+
+  // ── CH 01 ─────────────────────────────────────────────────────────────────────
+  { ch: '01', id: 'S02', tc: '0:05', tcOut: '0:15', dur: '10s', type: 'SILENT',
+    scene: 'Aerial Approach — Satellite Map',
+    visual: 'Real Google Maps satellite imagery, slow eased push into the Gqeberha metro. Fishwater Flats WWTW, outfall and coastline visible in frame. Caption: "Gqeberha — Where the Coast Meets Capacity". Chapter 01 title fades in at top.',
+    audio: 'Ambient wind / water only — no narration. Let the pictures open the film.',
+    status: 'EXISTING', notes: null },
+
+  { ch: '01', id: 'S03', tc: '0:15', tcOut: '0:23', dur: '8s', type: 'VO',
+    scene: 'B-roll — Outfall Scene',
+    visual: 'Outfall / water discharge footage — turbid flow, estuary context.',
+    audio: '"Fishwater Flats treats more than sixty percent of Gqeberha\'s wastewater — and when capacity runs short, the estuary feels it first."',
+    status: null, notes: null },
+
+  { ch: '01', id: 'S04', tc: '0:23', tcOut: '0:35', dur: '12s', type: 'SOT',
+    scene: 'Interview — NMBM Official',
+    visual: 'Quote card stand-in. Setting: outdoor, WWTW perimeter, treatment infrastructure visible behind subject.',
+    audio: 'SOT: "This plant carries the bay every single day. As the city has grown, so has the volume of sludge we have to manage responsibly — and that\'s exactly the challenge this project was built to meet."',
+    status: 'PLACEHOLDER', notes: 'Real interview footage required. Tone must frame an evolving infrastructure need — NOT municipal failure.' },
+
+  { ch: '01', id: 'S05', tc: '0:35', tcOut: '0:38', dur: '2.7s', type: 'TEXT',
+    scene: 'Stat Card — 155 ML/day',
+    visual: '~155 ML/day (large display) · "Wastewater received at Fishwater Flats WWTW" · still background (water texture).',
+    audio: 'Text only — no narration.',
+    status: null, notes: 'Figure subject to confirmation with client. Stat background is a placeholder — swap for real site photography when available.' },
+
+  { ch: '01', id: 'S06', tc: '0:38', tcOut: '0:40', dur: '2.7s', type: 'TEXT',
+    scene: 'Stat Card — 74 t/day',
+    visual: '~74 t/day · "Dry sludge solids to be responsibly managed" · still background (solids texture).',
+    audio: 'Text only — no narration.',
+    status: null, notes: null },
+
+  { ch: '01', id: 'S07', tc: '0:40', tcOut: '0:43', dur: '2.7s', type: 'TEXT',
+    scene: 'Stat Card — Since 1976',
+    visual: '"Since 1976" · "Original plant infrastructure — capacity needs have evolved" · still background.',
+    audio: 'Text only — no narration.',
+    status: null, notes: 'Background image is a placeholder site — NOT Fishwater Flats. Swap on delivery of real site photography.' },
+
+  { ch: '01', id: 'S08', tc: '0:43', tcOut: '0:46', dur: '3s', type: 'VO',
+    scene: 'Map — Eastern Cape Regional',
+    visual: 'Eastern Cape · Nelson Mandela Bay regional satellite. Caption: "Gqeberha — 1.2 million people". Slow push toward the metro.',
+    audio: '"One-point-two million people — and one site at the centre of it all."',
+    status: 'EXISTING', notes: null },
+
+  { ch: '01', id: 'S09', tc: '0:46', tcOut: '0:49', dur: '3s', type: 'VO',
+    scene: 'Map — Gqeberha Metro Wide',
+    visual: 'Gqeberha metro satellite — Fishwater Flats WWTW resolves in frame. Caption: "Fishwater Flats WWTW".',
+    audio: 'Voiceover continues from previous beat.',
+    status: 'EXISTING', notes: null },
+
+  // ── CH 02 ─────────────────────────────────────────────────────────────────────
+  { ch: '02', id: 'S10', tc: '0:49', tcOut: '0:57', dur: '8s', type: 'VO',
+    scene: 'Map — Site Overview + CAD Overlay',
+    visual: 'Full WWTW satellite footprint with proposed plant CAD overlay. Eased zoom onto the plant patch. Caption: "One site — turned into a multi-revenue green infrastructure asset". WWTW boundary and proposed extent are satellite-verified.',
+    audio: '"The Fishwater Flats Biogas Facility is being built on the existing municipal site — turning a liability into a multi-revenue green infrastructure asset."',
+    status: 'EXISTING', notes: null },
+
+  // ── CH 03 ─────────────────────────────────────────────────────────────────────
+  { ch: '03', id: 'S11', tc: '0:57', tcOut: '1:03', dur: '6s', type: 'VO',
+    scene: 'Block Flow — Feedstock In',
+    visual: 'Animated process block-flow diagram. Input nodes appear: "WWTW Sludge — Primary + secondary, ~12–14% TS" and "Food Waste / FOG — organic residues, co-digestion feed". Video backdrop at 16% opacity.',
+    audio: '"It begins with what the city already produces — sludge, food waste, fats, oils and greases."',
+    status: 'PROPOSED', notes: 'MANDATORY RECAST: backdrop clip (aeration basin, 5.3 s) freezes for 14.8 s — replace with a ≥20 s water-treatment clip.' },
+
+  { ch: '03', id: 'S12', tc: '1:03', tcOut: '1:08', dur: '5s', type: 'VO',
+    scene: 'Block Flow — Anaerobic Digestion',
+    visual: 'Three co-digester node lights up: "3× CSTR Mesophilic Co-Digesters". Flow lines animate from inputs. On-screen stats: "~2,400 Nm³/h raw biogas · ~60% methane".',
+    audio: '"Three co-digesters break that blend down over twenty-one days."',
+    status: 'PROPOSED', notes: 'Nm³/h and methane figures remain on screen — not in the read.' },
+
+  { ch: '03', id: 'S13', tc: '1:08', tcOut: '1:17', dur: '9s', type: 'VO',
+    scene: 'Block Flow — Products Out',
+    visual: 'Five output nodes cascade: Biomethane (CNG) · Electricity 2–5 MWe · Food-Grade CO₂ 30 tpd · Digestate · Recovered Water.',
+    audio: '"And what comes out is five things at once — biomethane, electricity, food-grade CO₂, digestate, and recovered water."',
+    status: 'PROPOSED', notes: null },
+
+  { ch: '03', id: 'S14', tc: '1:17', tcOut: '1:24', dur: '7s', type: 'SILENT',
+    scene: 'B-roll — CHP Scene',
+    visual: 'Combined heat & power unit footage.',
+    audio: 'No narration — ambient genset sound only.',
+    status: 'PLACEHOLDER', notes: 'REAL SHOOT PRIORITY #1 — current clip shows generic pipe racks, not a genset. This is the strongest factual claim in the film ("pilot is running today"): the footage must match.' },
+
+  { ch: '03', id: 'S15', tc: '1:24', tcOut: '1:38', dur: '14s', type: 'SOT',
+    scene: 'Interview — Straits Energy Engineering',
+    visual: 'Quote card stand-in. Setting: outdoor, standing at the Phase 1 pilot CHP unit.',
+    audio: 'SOT: "What makes this unique is the co-digestion. We\'re not just processing municipal sludge — we\'re pulling in source-separated food waste, FOG and organic residues — and that combination significantly increases the biogas yield."',
+    status: 'PLACEHOLDER', notes: 'Real interview footage required.' },
+
+  // ── CH 04 ─────────────────────────────────────────────────────────────────────
+  { ch: '04', id: 'S16', tc: '1:38', tcOut: '1:41', dur: '3s', type: 'TEXT',
+    scene: 'Section Title — 10 Dimensions of Impact',
+    visual: '"10 Dimensions of Impact" centred on screen. Backdrop: sifting / waste-separation footage at 32% opacity behind vignette.',
+    audio: 'Music only — no narration.',
+    status: null, notes: null },
+
+  { ch: '04', id: 'S17', tc: '1:41', tcOut: '1:45', dur: '4.5s', type: 'TEXT',
+    scene: 'Impact 01 — Ocean Protection',
+    visual: 'Wave icon · "Ocean protection" · "Odour & discharge complaints resolved at source". Aerial estuary b-roll backdrop at 50% opacity.',
+    audio: 'Music only.',
+    status: null, notes: null },
+
+  { ch: '04', id: 'S18', tc: '1:45', tcOut: '1:50', dur: '4.5s', type: 'TEXT',
+    scene: 'Impact 02 — Landfill Diversion',
+    visual: 'Landfill icon · ">200 t/day" · "Approved source-separated organics diverted from landfill into a monitored, traceable feedstock system".',
+    audio: 'Music only.',
+    status: null, notes: 'Clip recast pending — target: Household Food Waste (use window 6–10.5 s; opening 4 s has excessive motion under text).' },
+
+  { ch: '04', id: 'S19', tc: '1:50', tcOut: '1:54', dur: '4.5s', type: 'TEXT',
+    scene: 'Impact 03 — Water Recovery',
+    visual: 'Water icon · "Water recovery" · "Treated water reuse for arid Eastern Cape industry". Aeration basin backdrop.',
+    audio: 'Music only.',
+    status: null, notes: null },
+
+  { ch: '04', id: 'S20', tc: '1:54', tcOut: '1:59', dur: '4.5s', type: 'TEXT',
+    scene: 'Impact 04 — Zero Cost to NMBM',
+    visual: 'Check icon · "Zero cost to NMBM" · "Adds sludge-processing capacity and long-term operational resilience — at no municipal expense".',
+    audio: 'Music only.',
+    status: null, notes: 'Clip recast pending — target: Aerial Wastewater Treatment Plant clip.' },
+
+  { ch: '04', id: 'S21', tc: '1:59', tcOut: '2:03', dur: '4.5s', type: 'TEXT',
+    scene: 'Impact 05 — Embedded Generation',
+    visual: 'Bolt icon · "2 → 5 MWe" · "Renewable baseload replacing fossil fuel in hard-to-electrify industrial heat". Dome digesters + solar backdrop.',
+    audio: 'Music only.',
+    status: null, notes: null },
+
+  { ch: '04', id: 'S22', tc: '2:03', tcOut: '2:08', dur: '4.5s', type: 'TEXT',
+    scene: 'Impact 06 — Biomethane Pipeline',
+    visual: 'Pipe icon · "7.7 km pipeline" · "Biomethane to nearby industry — gas upgrading, storage & delivery under licensed safety controls". Tank-farm backdrop.',
+    audio: 'Music only.',
+    status: null, notes: null },
+
+  { ch: '04', id: 'S23', tc: '2:08', tcOut: '2:12', dur: '4.5s', type: 'TEXT',
+    scene: 'Impact 07 — Food-Grade CO₂',
+    visual: 'CO₂ icon · "30 tpd CO₂" · "Cryogenic food-grade carbon dioxide".',
+    audio: 'Music only.',
+    status: null, notes: 'Clip recast pending — target: CO₂-labelled tank footage (Abstract Alcohol clip; not yet confirmed in uploads).' },
+
+  { ch: '04', id: 'S24', tc: '2:12', tcOut: '2:17', dur: '4.5s', type: 'TEXT',
+    scene: 'Impact 08 — Organic Fertiliser',
+    visual: 'Leaf icon · "Organic fertiliser" · "Digestate for Eastern Cape agriculture". Steaming compost backdrop.',
+    audio: 'Music only.',
+    status: null, notes: null },
+
+  { ch: '04', id: 'S25', tc: '2:17', tcOut: '2:21', dur: '4.5s', type: 'TEXT',
+    scene: 'Impact 09 — Kiln Feedstock',
+    visual: 'Brick icon · "Kiln feedstock" · "Digestate cake supplied to regional brick kilns".',
+    audio: 'Music only.',
+    status: null, notes: 'Clip recast pending — target: Wood Chips clip (retires current anchovies footage).' },
+
+  { ch: '04', id: 'S26', tc: '2:21', tcOut: '2:26', dur: '4.5s', type: 'TEXT',
+    scene: 'Impact 10 — Local Employment',
+    visual: 'People icon · "100+ jobs" · "Construction, O&M and supply-chain employment". Hi-vis workers backdrop.',
+    audio: 'Music only.',
+    status: null, notes: null },
+
+  { ch: '04', id: 'S27', tc: '2:26', tcOut: '2:42', dur: '16s', type: 'SOT',
+    scene: 'Interview — Straits Energy Principal',
+    visual: 'Quote card stand-in. Setting: indoor, office, warm light.',
+    audio: 'SOT: "This is not a single-product energy project. This is an integrated infrastructure solution — every waste stream creates a revenue stream, and every revenue stream strengthens the investment case."',
+    status: 'PLACEHOLDER', notes: 'Real interview footage required.' },
+
+  // ── CH 05 ─────────────────────────────────────────────────────────────────────
+  { ch: '05', id: 'S28', tc: '2:42', tcOut: '2:50', dur: '8s', type: 'VO',
+    scene: '3D Model — Phase 1 Pilot (Proof of Concept)',
+    visual: '3D model render, animated frame sequence. Status badge: COMPLETED. Caption: "Phase 1 Pilot — Operational". Stat: "50 kWe exported to NMBM LV grid — live today, not a render".',
+    audio: '"And this isn\'t a concept. The Phase One pilot is running today — exporting fifty kilowatts into the municipal grid."',
+    status: 'COMPLETED', notes: null },
+
+  { ch: '05', id: 'S29', tc: '2:50', tcOut: '2:57', dur: '7s', type: 'VO',
+    scene: 'Map — Close Orbital Satellite',
+    visual: 'Close orbital real satellite — WWTW boundary, proposed plant footprint and pipelines mapped in. Caption: "The land is there. The feedstock is there."',
+    audio: '"The land is there. The feedstock is there. The partnerships are in place."',
+    status: 'EXISTING', notes: null },
+
+  { ch: '05', id: 'S30', tc: '2:57', tcOut: '3:01', dur: '4s', type: 'VO',
+    scene: 'Map — Site Overview (Existing)',
+    visual: 'Site overview satellite — existing WWTW footprint. Caption: "The Existing Municipal Site — Where Phases 2 & 3 will be built". Status badge: EXISTING.',
+    audio: '"All on the existing municipal footprint — between estuary and ocean — where Phases Two and Three will rise."',
+    status: 'EXISTING', notes: null },
+
+  { ch: '05', id: 'S31', tc: '3:01', tcOut: '3:05', dur: '4s', type: 'VO',
+    scene: 'Map — Coastal Site Layout',
+    visual: 'Anaergia satellite + blue CAD overlay (fwf_site_layout.png). Estuary and Indian Ocean in context. Caption: "On the Nelson Mandela Bay Coast".',
+    audio: 'Voiceover continues from previous beat.',
+    status: 'EXISTING', notes: null },
+
+  { ch: '05', id: 'S32', tc: '3:05', tcOut: '3:15', dur: '10s', type: 'VO',
+    scene: 'GES Fly-In — Site Diagram Flythrough',
+    visual: 'Animated camera flythrough over the CAD site layout. Phase 1: altitude descent. Phase 2: low-altitude orbit pan — Digesters → CHP → Gas Holder → CO₂ capsule → Full plant. All structures placed from real engineering drawings (Anaergia 24-0503-A04-001).',
+    audio: '"This is the Phase Two and Three layout — every structure placed from the actual engineering drawings."',
+    status: 'PROPOSED', notes: null },
+
+  { ch: '05', id: 'S33', tc: '3:15', tcOut: '3:20', dur: '5s', type: 'VO',
+    scene: '3D Model — Full Plant (4-View Composite)',
+    visual: '4-view composite from PDF — 3× Triton digesters, CHP complex, gas holder dome, BGU vessels. Caption: "3D Preliminary Plant Model".',
+    audio: '"Three high-solids digesters form the core of the plant, working each blend for around twenty-one days."',
+    status: 'PROPOSED', notes: null },
+
+  { ch: '05', id: 'S34', tc: '3:20', tcOut: '3:25', dur: '5s', type: 'VO',
+    scene: '3D Model — Triton Digester Row',
+    visual: 'NE elevation — animated frame sequence of the three Triton digesters. Caption: "Three Triton Digesters — The Process Core". On-screen stat: "3× high-solids CSTR · mesophilic · ~21-day HRT · target >95% availability".',
+    audio: 'Voiceover continues from previous beat.',
+    status: 'PROPOSED', notes: null },
+
+  { ch: '05', id: 'S35', tc: '3:25', tcOut: '3:30', dur: '5s', type: 'VO',
+    scene: '3D Model — CHP + Transformer Block',
+    visual: 'CHP block + transformer area animated sequence. Caption: "2 MWe → 5 MWe Embedded Generation". Stat: "6× CHP modules · embedded into WWTW 22kV ring main".',
+    audio: '"Six CHP modules feed up to five megawatts into the works\' own grid — while the gas holder and upgrading train turn raw biogas into pipeline-ready biomethane."',
+    status: 'DEVELOPMENT', notes: null },
+
+  { ch: '05', id: 'S36', tc: '3:30', tcOut: '3:35', dur: '5s', type: 'VO',
+    scene: '3D Model — Gas Holder + BGU',
+    visual: 'Gas holder dome + biogas upgrading train. Caption: "Biogas Storage & Upgrading". Stat: "CO₂ offtake — term sheet, in finalisation · CNG + 7.7 km pipeline (in development)".',
+    audio: 'Voiceover continues from previous beat.',
+    status: 'DEVELOPMENT', notes: null },
+
+  { ch: '05', id: 'S37', tc: '3:35', tcOut: '3:40', dur: '5s', type: 'VO',
+    scene: '3D Model — Cryogenic CO₂ Vessel',
+    visual: 'Close-up animated sequence — cryogenic CO₂ vessel. Caption: "Food-Grade Liquid CO₂". Stat: "~30 tpd · food/beverage-grade · cryogenic liquefaction". Status badge: IN FINALISATION.',
+    audio: '"A cryogenic unit recovers thirty tonnes of food-grade CO₂ a day — and the receiving zone earns gate fees on every load of organics that arrives."',
+    status: 'FINALISATION', notes: null },
+
+  { ch: '05', id: 'S38', tc: '3:40', tcOut: '3:45', dur: '5s', type: 'VO',
+    scene: '3D Model — Feedstock Receiving Zone',
+    visual: 'Feedstock receiving zone. Caption: "Co-Digestion Intake". Stat: "Live bottom bins · FOG tank · blending tanks — gate-fee revenue".',
+    audio: 'Voiceover continues from previous beat.',
+    status: 'PROPOSED', notes: null },
+
+  { ch: '05', id: 'S39', tc: '3:45', tcOut: '4:01', dur: '16s', type: 'SOT',
+    scene: 'Interview — EPC Technology Partner',
+    visual: 'Quote card stand-in. Setting: indoor, commissioning / plant-floor environment.',
+    audio: 'SOT: "This is a proven co-digestion platform. What\'s being done at Fishwater Flats is deploying that proven technology where the environmental need — and the commercial case — are both exceptionally strong."',
+    status: 'PLACEHOLDER', notes: 'Name and logo withheld pending disclosure confirmation. Identify counterparty before naming on screen.' },
+
+  { ch: '05', id: 'S40', tc: '4:01', tcOut: '4:07', dur: '6s', type: 'SILENT',
+    scene: 'B-roll — CNG / Pipeline Scene',
+    visual: 'CNG / biomethane delivery footage.',
+    audio: 'No narration — ambient sound only.',
+    status: null, notes: 'Current clip shows a pipeline valve — subject and on-screen title are mismatched. Recast to CNG tube-trailer / virtual-pipeline loading footage, or retitle the beat.' },
+
+  { ch: '05', id: 'S41', tc: '4:07', tcOut: '4:11', dur: '4s', type: 'SILENT',
+    scene: 'B-roll — CO₂ Scene',
+    visual: 'Cryogenic CO₂ pipework footage.',
+    audio: 'No narration — ambient sound only.',
+    status: null, notes: null },
+
+  { ch: '05', id: 'S42', tc: '4:11', tcOut: '4:16', dur: '5s', type: 'SILENT',
+    scene: 'Map — Biomethane Pipeline Corridor',
+    visual: 'Coastal 7.7 km biomethane pipeline corridor. Caption: "7.7 km anchor pipeline route — Dedicated route to nearby industry". Status badge: IN DEVELOPMENT.',
+    audio: 'On-screen stats only — no narration.',
+    status: 'DEVELOPMENT', notes: 'On-screen label reads 7.7 km — matches locked KMZ (7.69 km).' },
+
+  // ── CH 06 ─────────────────────────────────────────────────────────────────────
+  { ch: '06', id: 'S43', tc: '4:16', tcOut: '4:27', dur: '11s', type: 'VO',
+    scene: 'Closing Aerial',
+    visual: 'Aerial b-roll — biogas facility drone shot.',
+    audio: '"Fishwater Flats Biogas Facility. Powering a sustainable future for Nelson Mandela Bay."',
+    status: 'PLACEHOLDER', notes: 'REAL-SHOOT PRIORITY #2 — incumbent is a European WWTW, not FWF. Correct aerial required before final delivery.' },
+
+  { ch: '06', id: 'S44', tc: '4:27', tcOut: '4:42', dur: '15s', type: 'SILENT',
+    scene: 'End Card',
+    visual: 'Project status coding (milestones), indicative delivery timeline, project role attributions (Straits Energy Holdings, EnergiDrop, Anaergia EPC), contact details.',
+    audio: 'Music fades to silence on the final frame.',
+    status: null, notes: null },
+];
+
+// ── Storage ──────────────────────────────────────────────────────────────────
+const KEY = 'fwf_shotlist_v1';
+let approvals = {};
+try { approvals = JSON.parse(localStorage.getItem(KEY) || '{}'); } catch(e) {}
+function save() { try { localStorage.setItem(KEY, JSON.stringify(approvals)); } catch(e) {} }
+
+// ── Render helpers ───────────────────────────────────────────────────────────
+function audioClass(t) { return t.toLowerCase(); }
+
+function statusBadge(s) {
+  if (!s || !STATUS[s]) return '';
+  const d = STATUS[s];
+  return `<span class="status-badge" style="background:${d.bg};color:${d.c}">${d.label}</span>`;
+}
+
+function shotRow(shot, idx) {
+  const t = audioClass(shot.type);
+  const ap = approvals[shot.id] || '';
+  return `
+  <div class="shot-row${ap ? ' ' + ap : ''}" data-id="${shot.id}" id="row-${shot.id}">
+    <div class="shot-left ${t}">
+      <div class="shot-num">${String(idx).padStart(2,'0')}</div>
+      <div class="shot-tc">${shot.tc}<br>${shot.tcOut}</div>
+      <div class="shot-dur">${shot.dur}</div>
+      <div class="audio-badge ${t}">${{VO:'VO',SOT:'SOT',TEXT:'TEXT',SILENT:'SILENT'}[shot.type]}</div>
+    </div>
+    <div class="shot-mid">
+      <div class="shot-scene">${shot.scene}</div>
+      <div class="shot-visual">${shot.visual}</div>
+      <div class="shot-audio">${shot.audio}</div>
+      ${shot.notes ? `<div class="shot-note">${shot.notes}</div>` : ''}
+    </div>
+    <div class="shot-right">
+      ${shot.status ? statusBadge(shot.status) : '<div></div>'}
+      <div class="approval-group">
+        <button class="appr-btn${ap==='approved'?' active-appr':''}" onclick="setApproval('${shot.id}','approved',this)">✓ Approved</button>
+        <button class="appr-btn${ap==='revise'?' active-rev':''}" onclick="setApproval('${shot.id}','revise',this)">↺ Revise</button>
+        <button class="appr-btn${ap==='hold'?' active-hold':''}" onclick="setApproval('${shot.id}','hold',this)">⏸ Hold</button>
+      </div>
+    </div>
+  </div>`;
+}
+
+function setApproval(id, state, btn) {
+  const prev = approvals[id];
+  if (prev === state) {
+    delete approvals[id];
+    approvals[id] = '';
+  } else {
+    approvals[id] = state;
+  }
+  save();
+  renderAll();
+  updateSummary();
+}
+window.setApproval = setApproval;
+
+function updateSummary() {
+  const vals = Object.values(approvals).filter(Boolean);
+  document.getElementById('cnt-total').textContent = SHOTS.length;
+  document.getElementById('cnt-appr').textContent = vals.filter(v=>v==='approved').length;
+  document.getElementById('cnt-rev').textContent = vals.filter(v=>v==='revise').length;
+  document.getElementById('cnt-hold').textContent = vals.filter(v=>v==='hold').length;
+  document.getElementById('cnt-pend').textContent = SHOTS.length - vals.length;
+}
+
+function renderAll() {
+  let html = '';
+
+  // Masthead
+  html += `
+  <div class="masthead">
+    <div class="masthead-inner">
+      <div class="masthead-left">
+        <div class="masthead-eyebrow">Straits Energy Holdings · EnergiDrop · Anaergia EPC</div>
+        <div class="masthead-title">Fishwater Flats Biogas Facility</div>
+        <div class="masthead-sub">Shot-by-Shot Approval Document · Full Cut (4:42) · 44 Shots</div>
+      </div>
+      <div class="masthead-meta">
+        <div class="meta-item"><div class="meta-label">Document</div><div class="meta-value">V1 · Sign-Off Draft</div></div>
+        <div class="meta-item"><div class="meta-label">Date</div><div class="meta-value">27 Aug 2026</div></div>
+        <div class="meta-item"><div class="meta-label">Runtime</div><div class="meta-value">4:42 (282 s)</div></div>
+        <div class="meta-item"><div class="meta-label">Cut</div><div class="meta-value">Full (Primary)</div></div>
+      </div>
+      <div class="masthead-accent"></div>
+    </div>
+  </div>`;
+
+  // Legend
+  html += `
+  <div class="legend">
+    <div class="legend-group">
+      <div class="legend-label">Audio</div>
+      <div class="legend-items">
+        <div class="legend-item"><div class="legend-swatch" style="background:#0090E0"></div>Voiceover</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#9A7000"></div>Interview SOT</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#1A90A8"></div>Text Only</div>
+        <div class="legend-item"><div class="legend-swatch" style="background:#5A7888"></div>No Narration</div>
+      </div>
+    </div>
+    <div class="legend-div"></div>
+    <div class="legend-group">
+      <div class="legend-label">Status</div>
+      <div class="legend-items">
+        <div class="legend-item"><span class="legend-pill" style="background:#E8F8EF;color:#1A9E5A">Completed</span></div>
+        <div class="legend-item"><span class="legend-pill" style="background:#E3EFF8;color:#0070C0">Existing</span></div>
+        <div class="legend-item"><span class="legend-pill" style="background:#EDE8F8;color:#7040C8">Proposed</span></div>
+        <div class="legend-item"><span class="legend-pill" style="background:#FBF0E2;color:#C06000">In Development</span></div>
+        <div class="legend-item"><span class="legend-pill" style="background:#E2F4F6;color:#008898">In Finalisation</span></div>
+        <div class="legend-item"><span class="legend-pill" style="background:#FAEBEB;color:#C02828">Footage Required</span></div>
+      </div>
+    </div>
+    <div class="legend-div"></div>
+    <div class="legend-group">
+      <div class="legend-label">⚠</div>
+      <div class="legend-items">
+        <div class="legend-item" style="color:var(--sub)">Production note — action required before delivery</div>
+      </div>
+    </div>
+  </div>`;
+
+  // Shots grouped by chapter
+  let lastCh = null;
+  let shotNum = 0;
+  SHOTS.forEach(shot => {
+    if (shot.ch !== lastCh) {
+      lastCh = shot.ch;
+      const ch = CHAPTERS[shot.ch];
+      html += `
+      <div class="chapter-header">
+        <div class="chapter-num">${ch.num || '·'}</div>
+        <div class="chapter-info">
+          <div class="chapter-eyebrow">${shot.ch === '00' ? 'Opening' : 'Chapter ' + ch.num}</div>
+          <div class="chapter-name">${ch.name}</div>
+        </div>
+        <div class="chapter-bar"></div>
+      </div>
+      <div class="shots-wrapper">`;
+    }
+    shotNum++;
+    html += shotRow(shot, shotNum);
+  });
+  html += `</div>`; // close last shots-wrapper
+
+  // Review summary
+  html += `
+  <div class="review-bar" style="max-width:1100px;margin:24px auto 0">
+    <div class="review-stat">
+      <div class="review-count" id="cnt-total">${SHOTS.length}</div>
+      <div class="review-stat-label">Total Shots</div>
+    </div>
+    <div class="review-stat" style="color:var(--appr-c)">
+      <div class="review-count" id="cnt-appr" style="color:var(--appr-c)">0</div>
+      <div class="review-stat-label">Approved</div>
+    </div>
+    <div class="review-stat" style="color:var(--rev-c)">
+      <div class="review-count" id="cnt-rev" style="color:var(--rev-c)">0</div>
+      <div class="review-stat-label">Revise</div>
+    </div>
+    <div class="review-stat" style="color:var(--hold-c)">
+      <div class="review-count" id="cnt-hold" style="color:var(--hold-c)">0</div>
+      <div class="review-stat-label">Hold</div>
+    </div>
+    <div class="review-stat">
+      <div class="review-count" id="cnt-pend">0</div>
+      <div class="review-stat-label">Pending Review</div>
+    </div>
+  </div>`;
+
+  // Sign-off block
+  html += `
+  <div class="signoff" style="max-width:1100px;margin:0 auto">
+    <div class="signoff-title">Document Sign-Off</div>
+    <div class="signoff-sub">By signing below, the named parties confirm that the shots listed in this document have been reviewed and approved for production. Any shots marked "Revise" or "Hold" in the digital review above must be resolved before final delivery.</div>
+    <div class="signoff-grid">
+      <div class="sig-block">
+        <div class="sig-label">Production — EnergiDrop</div>
+        <div class="sig-name">Production Team</div>
+        <div class="sig-role">EnergiDrop Power &amp; Project Management</div>
+        <div class="sig-line">Signature ___________________________</div>
+        <div class="sig-date-line">Date ________________________________</div>
+      </div>
+      <div class="sig-block">
+        <div class="sig-label">Project Owner</div>
+        <div class="sig-name">Straits Energy Holdings</div>
+        <div class="sig-role">Principal — Project Developer</div>
+        <div class="sig-line">Signature ___________________________</div>
+        <div class="sig-date-line">Date ________________________________</div>
+      </div>
+      <div class="sig-block">
+        <div class="sig-label">Review Notes</div>
+        <div class="sig-role" style="font-size:12px;line-height:1.6">Use the Revise / Hold buttons in the digital version, or annotate shots by number on the printed version. Return annotations to the production team within 5 working days.</div>
+      </div>
+    </div>
+  </div>`;
+
+  // Footer
+  html += `
+  <div class="doc-footer">
+    FISHWATER FLATS BIOGAS FACILITY · FULL CUT SHOT LIST V1 · STRAITS ENERGY HOLDINGS / ENERGIDROP · CONFIDENTIAL · 27 AUGUST 2026
+  </div>`;
+
+  document.getElementById('root').innerHTML = html;
+  updateSummary();
+}
+
+renderAll();
+</script>
